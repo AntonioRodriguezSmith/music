@@ -71,6 +71,8 @@ If the UI is blank after tightening CSP (`script-src 'self'`), temporarily resto
 
 `npm run tauri -- build` uses `CARGO_TARGET_DIR`. Locally that defaults to `%LOCALAPPDATA%\clip_harbour-target`. The Actions release workflow **must** set `CARGO_TARGET_DIR` to `src-tauri/target` (see `.github/workflows/release-windows.yml`) so `upload-artifact` finds MSI/NSIS. If you override the env locally, collect artefacts from that same directory.
 
+If the job fails with **MSVC not found**, `scripts/setup-windows-env.ps1` could not locate `vcvars64.bat`. On GitHub Actions it should use `vswhere`; locally install VS “Desktop development with C++” or Build Tools.
+
 ## Bulk download fails on some videos
 
 Bulk no longer reuses one numeric format id. It uses `bestaudio/best` per URL.

@@ -25,13 +25,30 @@ if (-not $env:CARGO_TARGET_DIR) {
 
 $vcvarsCandidates = @(
     (Join-Path $env:LOCALAPPDATA "msvcup\toolchain\vcvars-x64.bat"),
+    "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat",
+    "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat"
 )
 
-$vcvars = $vcvarsCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+# Prefer vswhere (GitHub Actions / VS Installer) so CI picks Enterprise/BuildTools correctly
+$vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+if (Test-Path $vswhere) {
+    $installPath = & $vswhere -latest -products * `
+        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+        -property installationPath 2>$null |
+        Select-Object -First 1
+    if ($installPath) {
+        $fromVswhere = Join-Path $installPath "VC\Auxiliary\Build\vcvars64.bat"
+        if (Test-Path $fromVswhere) {
+            $vcvarsCandidates = @($fromVswhere) + $vcvarsCandidates
+        }
+    }
+}
+
+$vcvars = $vcvarsCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 if (-not $vcvars) {
     Write-Error "MSVC not found. Install 'Desktop development with C++' (VS) or Build Tools, then re-run."
 }

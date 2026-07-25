@@ -1,8 +1,9 @@
 name: Release Windows (unsigned)
 
-# Builds MSI + NSIS via npm run tauri -- build (scripts/tauri-windows.ps1).
+# Builds MSI + NSIS via npm run tauri -- build (scripts/tauri-windows.ps1 → setup-windows-env.ps1).
+# MSVC is resolved with vswhere (Enterprise/BuildTools on GitHub Actions) or known VS paths.
 # Pin CARGO_TARGET_DIR to the repo so upload-artifact matches the bundle path.
-# (Locally, setup-windows-env.ps1 defaults to %LOCALAPPDATA%\clip_harbour-target.)
+# Locally, setup-windows-env.ps1 defaults to %LOCALAPPDATA%\clip_harbour-target if unset.
 
 on:
   workflow_dispatch:
@@ -20,9 +21,12 @@ jobs:
           node-version: "22"
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
       - run: npm ci
       - run: npm run fetch:sidecars:windows
-      - run: npm run tauri -- build
+      - name: Build installers
+        run: npm run tauri -- build
       - name: List bundle outputs
         shell: pwsh
         run: |
