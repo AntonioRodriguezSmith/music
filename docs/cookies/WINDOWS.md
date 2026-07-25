@@ -12,6 +12,7 @@ Docs for this stack: [Tauri 2](https://v2.tauri.app/) (not [Tauri 1](https://v1.
 4. Optional: copy `.env.example` → `.env` and set `VITE_DEFAULT_DOWNLOAD_PATH`.
 5. `npm run test` then `npm run smoke:windows`
 6. `npm run dev:windows` (or `.\dev-windows.ps1`)
+7. **Optional polished launch:** desktop shortcut **Clip Harbour** → splash (large icon + progress, no console). Docs: [LAUNCHER_WINDOWS.md](../LAUNCHER_WINDOWS.md). Assets: `assets/clip-harbour-app-icon.{png,ico}`; scripts: `scripts/launch-clip-harbour.{vbs,ps1}`.
 
 Use the **native Clip Harbour window**. The Vite URL on port `1420` is only the web frontend; `invoke` / sidecars will not work in a normal browser.
 
@@ -84,6 +85,8 @@ Installers are **unsigned** (code signing is Phase 2). Upstream GitHub releases 
 | `.vscode/settings.json` | Prepends `.cargo\bin` to integrated terminal PATH. |
 | `scripts/fetch-windows-sidecars.ps1` | Fetches Windows `yt-dlp.exe` + `ffmpeg.exe` with correct sidecar filenames. |
 | `scripts/smoke-windows.ps1` | Smoke: sidecar presence/`--version` + `vitest`. |
+| `scripts/launch-clip-harbour.vbs` / `.ps1` | Silent splash launcher (no console); see [LAUNCHER_WINDOWS.md](../LAUNCHER_WINDOWS.md). |
+| `assets/clip-harbour-app-icon.png` / `.ico` | Splash + desktop shortcut icon. |
 | `src/lib/format_details.js` | Shared format labels, key-data rows, audio/video codec display helpers. |
 | `src/lib/*.test.js` | Unit tests for URL resolve, download path, status helpers. |
 | `.env.example` | Optional `VITE_DEFAULT_DOWNLOAD_PATH`. |

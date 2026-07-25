@@ -11,6 +11,7 @@ Notas del fork y guías operativas:
 - [PHASE1_CHECKLIST.md](./PHASE1_CHECKLIST.md) — checklist Fase 1
 - [CHANGELOG_FORK.md](./CHANGELOG_FORK.md) — cambios del fork (búsqueda, cola, Windows)
 - [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — problemas frecuentes
+- [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md) — splash + acceso directo Escritorio (sin consola)
 - [cookies/WINDOWS.md](./cookies/WINDOWS.md) — desarrollo y **build release** en Windows
 - [cookies/cookies_info.md](./cookies/cookies_info.md) — guía de cookies YouTube para yt-dlp
 - [cookies/cookies.txt.example](./cookies/cookies.txt.example) — plantilla Netscape (sin cookies reales)
@@ -24,5 +25,6 @@ Notas del fork y guías operativas:
 - **Formatos:** audio primero, vídeo después; 12 por página con scroll interno y paginación Anterior/Siguiente.
 - **Datos clave:** campos traducidos (códec, bitrate, frecuencia, resolución, tamaño) vía `src/lib/format_details.js`.
 - **Modos:** Standard / USB BMW / PC; por defecto se elige el mejor audio; USB BMW convierte a M4A y borra el `.webm` fuente.
+- **Lanzador Windows:** acceso directo Escritorio con splash (icono CH + barra de progreso); ver [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
 
 Detalle técnico en [CHANGELOG_FORK.md](./CHANGELOG_FORK.md) y la tabla *Frontend* de [cookies/WINDOWS.md](./cookies/WINDOWS.md).

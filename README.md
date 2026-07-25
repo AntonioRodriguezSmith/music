@@ -63,7 +63,7 @@ Ve a la página de [releases](https://github.com/amansxcalibur/clip_harbour/rele
 
 **Usuarios Windows:** aún no hay release oficial para Windows — compila desde el código con la sección [Desarrollo en Windows](#desarrollo-en-windows).
 
-En la app de escritorio (ventana nativa con `npm run tauri -- dev` / `npm run dev:windows` — **no hay icono** en el menú Inicio ni en el escritorio hasta que compiles e instales):
+En la app de escritorio (ventana nativa con `npm run tauri -- dev` / `npm run dev:windows`). En Windows: acceso directo **Clip Harbour** del Escritorio con splash (icono grande + barra de progreso, sin consola) — guía completa en [docs/LAUNCHER_WINDOWS.md](docs/LAUNCHER_WINDOWS.md).
 - Usa el control **ES | EN** en la sidebar para cambiar el idioma.
 - Busca o pega una URL de YouTube (campo redondeado + botón negro). Navega con Anterior / Siguiente — las filas por página se fijan tras el primer layout de esa búsqueda (redimensionar no cambia cuántas URLs ves por página). Pasa el ratón ~400 ms sobre una fila para ver miniatura y metadatos a la derecha (enriquecidos con `get_url_details` si hace falta).
 - Marca vídeos y pulsa **Configurar descarga**, o abre un resultado concreto (los formatos se cargan con `get_url_details`).
@@ -122,6 +122,7 @@ npm run smoke:windows        # sidecars --version + tests unitarios
 # opcional: copiar .env.example → .env y definir VITE_DEFAULT_DOWNLOAD_PATH
 # cookies: ver docs/PHASE2_SETUP.md
 npm run dev:windows
+npm run launch:windows       # splash Escritorio (sin consola); docs/LAUNCHER_WINDOWS.md
 # instaladores de release (MSI + NSIS):
 npm run tauri -- build
 # Authenticode opcional (hace skip si no hay cert en el entorno):

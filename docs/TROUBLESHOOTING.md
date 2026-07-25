@@ -8,7 +8,17 @@ Vite in the browser (`localhost:1420`) cannot talk to sidecars. Run:
 npm run tauri -- dev
 ```
 
-Use the native Clip Harbour window.
+Use the native Clip Harbour window. On Windows you can also use the **Clip Harbour** desktop shortcut (splash, no console) — see [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
+
+## Splash / acceso directo (Windows)
+
+| Symptom | Check |
+|---------|--------|
+| Se abre una ventana negra de CMD | El `.lnk` debe apuntar a `wscript.exe` + `scripts\launch-clip-harbour.vbs`, no a `powershell.exe` a pelo. Recrea el acceso directo con la guía en [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md). |
+| Texto del splash ilegible (`Ã…`, símbolos raros) | `launch-clip-harbour.ps1` debe estar en **UTF-8 con BOM**; textos con `...` ASCII, no `…`. |
+| Splash no se cierra nunca | Mira `%TEMP%\clip-harbour-launch.log`. Falta `npm install`, sidecars (`npm run fetch:sidecars:windows`) o error de Rust/MSVC. Prueba `npm run dev:windows` en una terminal para ver el error. |
+| Doble instancia | Si ya hay `clip_harbour` con ventana, el lanzador solo la enfoca. Cierra la app antes de un arranque limpio. |
+| Icono genérico en el Escritorio | `IconLocation` → `assets\clip-harbour-app-icon.ico`. |
 
 ## Queue emptied when opening a video
 

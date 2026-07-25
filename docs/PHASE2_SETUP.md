@@ -56,7 +56,7 @@ npm run fetch:sidecars:windows
 
 En desarrollo no hay icono de escritorio: usa la terminal.
 
-1. `npm run tauri -- dev` (ventana nativa; no el browser en `:1420`).
+1. `npm run tauri -- dev` o `npm run launch:windows` (splash + acceso directo; ver [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md)). Ventana nativa; no el browser en `:1420`.
 2. Sidebar: archivo `cookies.txt` seleccionado.
 3. Buscar un término corto → resultados sin “Sign in to confirm you're not a bot”.
 4. Una descarga de prueba; en Historial, **Abrir** el fichero.

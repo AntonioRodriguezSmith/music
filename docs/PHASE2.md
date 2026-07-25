@@ -17,7 +17,7 @@ Producto, fiabilidad, ingeniería y release del fork Windows tras el cierre de F
 
 ## Cómo usar
 
-En desarrollo **no hay icono de escritorio**: arranca con `npm run tauri -- dev` (o `npm run dev:windows`) y usa la **ventana nativa**, no el browser en `:1420`.
+En desarrollo usa la **ventana nativa**, no el browser en `:1420`. Arranque: `npm run tauri -- dev` / `npm run dev:windows`, o el acceso directo **Clip Harbour** del Escritorio (splash sin consola) — [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
 
 1. **Cookies:** [PHASE2_SETUP.md](./PHASE2_SETUP.md) — exportar Netscape → sidebar → Elegir cookies.txt.
 2. **Cola:** al reiniciar con pendientes, banner “Reanudar N pendientes” → **Reintentar** (re-download, no resume de bytes).

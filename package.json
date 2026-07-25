@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "dev:windows": "powershell -ExecutionPolicy Bypass -File ./dev-windows.ps1",
+    "launch:windows": "wscript //nologo ./scripts/launch-clip-harbour.vbs",
     "fetch:sidecars:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-windows-sidecars.ps1",
     "smoke:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-windows.ps1",
     "sign:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/sign-windows.ps1",
