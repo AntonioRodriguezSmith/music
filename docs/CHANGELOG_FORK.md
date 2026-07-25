@@ -2,6 +2,13 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-07 — Cargo check optimize (CI + local)
+
+- **CI:** `Swatinem/rust-cache@v2` on `check-windows` + `dorny/paths-filter` so `cargo check` runs only when `src-tauri/**` changes; Windows smoke always runs.
+- **Release:** same rust-cache on `release-windows.yml` (still `workflow_dispatch`).
+- **Local:** `npm run check:rust` / `check:rust:bg` ([`scripts/cargo-check-windows.ps1`](../scripts/cargo-check-windows.ps1), log `%TEMP%\clip-harbour-cargo-check.log`).
+- **Deps:** `tokio` features trimmed from `full` to `rt`, `macros`, `time`, `sync`.
+
 ## 2026-07 — Phase 2
 
 - **Summary:** [PHASE2.md](./PHASE2.md) · setup [PHASE2_SETUP.md](./PHASE2_SETUP.md) · audit [PHASE2_AUDIT.md](./PHASE2_AUDIT.md) · checklist [PHASE2_CHECKLIST.md](./PHASE2_CHECKLIST.md).

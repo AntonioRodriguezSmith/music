@@ -39,7 +39,9 @@ Installers are **unsigned** by default (`npm run sign:windows` skips without cer
 
 ### GitHub Actions release (`workflow_dispatch`)
 
-[`.github/workflows/release-windows.yml`](../../.github/workflows/release-windows.yml) sets `CARGO_TARGET_DIR` to `src-tauri/target` on the runner so MSI/NSIS match `upload-artifact`. Locally keep the default under `%LOCALAPPDATA%\clip_harbour-target` (avoids synced folders). Do not mix those paths when collecting artifacts.
+[`.github/workflows/release-windows.yml`](../../.github/workflows/release-windows.yml) sets `CARGO_TARGET_DIR` to `src-tauri/target` on the runner so MSI/NSIS match `upload-artifact`, and uses `Swatinem/rust-cache@v2` (`workspaces: src-tauri`). Locally keep the default under `%LOCALAPPDATA%\clip_harbour-target` (avoids synced folders). Do not mix those paths when collecting artifacts.
+
+CI ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)): Windows smoke always; `cargo check` only when `src-tauri/**` changes (paths-filter + rust-cache). Local gate: `npm run check:rust` / `check:rust:bg`.
 
 There is **no portable ZIP** package in Fase 1/2 — only MSI, NSIS setup, and the release `.exe` under `CARGO_TARGET_DIR`.
 
@@ -127,6 +129,7 @@ There is **no portable ZIP** package in Fase 1/2 — only MSI, NSIS setup, and t
 | MSVC / `winapifamily.h` missing | Install full Windows SDK; `setup-windows-env.ps1` prepends system SDK includes. |
 | Port 1420 in use | Kill leftover `node` / Vite processes, then restart the launcher. |
 | Slow or locked builds on Proton Drive | `CARGO_TARGET_DIR` is set to `%LOCALAPPDATA%\clip_harbour-target`. |
+| CI Windows lento / cargo check skipped | Primera vez tras lockfile = cold cache. `cargo check` se salta si no cambia `src-tauri/**`. Local: `npm run check:rust` / `check:rust:bg`. Ver [TROUBLESHOOTING.md](../TROUBLESHOOTING.md). |
 | Cannot drag / minimize / close window | Frameless mode needs `core:window:allow-start-dragging` (and min/max/close) in `capabilities/default.json`. |
 | UI clipped / format list hard to use | Format panel scrolls inside each page; use Anterior/Siguiente for pages beyond 12 formats. Search rows/page stay fixed after first measure (list scrolls if the window is shorter). Window ≥ `minWidth`/`minHeight` (1024×640). |
 | Preview always shows first search hit | Fixed: preview index no longer resets on every `search-update` while streaming; only on new search or page change. |

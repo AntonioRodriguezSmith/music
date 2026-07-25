@@ -30,11 +30,14 @@ En desarrollo usa la **ventana nativa**, no el browser en `:1420`. Arranque: `np
 npm test
 npm run test:e2e          # tras npm i + npx playwright install
 npm run smoke:windows
-cargo check               # en src-tauri
+npm run check:rust        # cargo check con MSVC + log en %TEMP%\clip-harbour-cargo-check.log
+# npm run check:rust:bg   # mismo check en ventana minimizada (no abre tauri/splash)
 ```
 
-CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (Vitest + Playwright en Ubuntu; smoke + cargo check en Windows) — verde en `main` (2026-07-25).  
-Release unsigned: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (`workflow_dispatch`). En CI fija `CARGO_TARGET_DIR` a `src-tauri/target` para que los artefactos coincidan con `upload-artifact`. En local los instaladores salen bajo `%LOCALAPPDATA%\clip_harbour-target` (ver [cookies/WINDOWS.md](./cookies/WINDOWS.md)). No hay paquete portable ZIP en Fase 2.
+`rust-analyzer` ya diagnostica en el IDE; `check:rust` es el gate explícito (CI-like). ~500 crates transitivas de Tauri son normales — la optimización es caché/skip, no podar el árbol.
+
+CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (Vitest + Playwright en Ubuntu; en Windows: smoke siempre + `cargo check` solo si cambia `src-tauri/**`, con `Swatinem/rust-cache`).  
+Release unsigned: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (`workflow_dispatch`, misma rust-cache). En CI fija `CARGO_TARGET_DIR` a `src-tauri/target` para que los artefactos coincidan con `upload-artifact`. En local los instaladores salen bajo `%LOCALAPPDATA%\clip_harbour-target` (ver [cookies/WINDOWS.md](./cookies/WINDOWS.md)). No hay paquete portable ZIP en Fase 2.
 
 ## Firma de instalador
 

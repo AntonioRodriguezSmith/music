@@ -73,6 +73,14 @@ If the UI is blank after tightening CSP (`script-src 'self'`), temporarily resto
 
 If the job fails with **MSVC not found**, `scripts/setup-windows-env.ps1` could not locate `vcvars64.bat`. On GitHub Actions it should use `vswhere`; locally install VS “Desktop development with C++” or Build Tools.
 
+## CI Windows lento / cargo check skipped
+
+| Symptom | Check |
+|---------|--------|
+| Primera ejecución de `check-windows` tras cambio de `Cargo.lock` / toolchain | Normal: cold cache (~500 crates). Siguientes pushes con `src-tauri/**` deben restaurar `Swatinem/rust-cache`. |
+| Step `cargo check` aparece **skipped** | No hubo cambios en `src-tauri/**` (filtro `dorny/paths-filter`). Smoke Windows sigue corriendo. |
+| Quieres un gate Rust local sin abrir la app | `npm run check:rust` o `npm run check:rust:bg` (log en `%TEMP%\clip-harbour-cargo-check.log`). No uses `npm run tauri` solo para typecheck. |
+
 ## Bulk download fails on some videos
 
 Bulk no longer reuses one numeric format id. It uses `bestaudio/best` per URL.
