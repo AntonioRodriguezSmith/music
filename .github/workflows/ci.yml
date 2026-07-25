@@ -1,5 +1,8 @@
 name: CI
 
+# Windows cargo check uses Swatinem/rust-cache (first run after lockfile change is still cold).
+# cargo check is skipped when src-tauri/** is unchanged (dorny/paths-filter).
+
 on:
   push:
     branches: [main, master]
@@ -29,8 +32,19 @@ jobs:
           node-version: "22"
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            rust:
+              - 'src-tauri/**'
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
       - run: npm ci
       - run: npm run fetch:sidecars:windows
       - run: npm run smoke:windows
-      - run: cargo check
+      - name: cargo check
+        if: steps.filter.outputs.rust == 'true'
+        run: cargo check
         working-directory: src-tauri
