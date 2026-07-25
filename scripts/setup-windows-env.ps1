@@ -23,24 +23,29 @@ if (-not $env:CARGO_TARGET_DIR) {
     $env:CARGO_TARGET_DIR = Join-Path $env:LOCALAPPDATA "clip_harbour-target"
 }
 
+# Prefer real Visual Studio / Build Tools MSVC; msvcup is last-resort fallback only.
+# Build Tools usually lives under Program Files (x86).
 $vcvarsCandidates = @(
-    (Join-Path $env:LOCALAPPDATA "msvcup\toolchain\vcvars-x64.bat"),
     "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat",
+    "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat",
+    "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat",
-    "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat"
+    "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat",
+    (Join-Path $env:LOCALAPPDATA "msvcup\toolchain\vcvars-x64.bat")
 )
 
-# Prefer vswhere (GitHub Actions / VS Installer) so CI picks Enterprise/BuildTools correctly
+# Prefer vswhere (GitHub Actions / VS Installer). Use -all so a newer VS without
+# C++ tools (e.g. Community 2026) does not hide Build Tools that do have MSVC.
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
 if (Test-Path $vswhere) {
-    $installPath = & $vswhere -latest -products * `
+    $installPaths = & $vswhere -all -products * `
         -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -property installationPath 2>$null |
-        Select-Object -First 1
-    if ($installPath) {
+        -property installationPath 2>$null
+    foreach ($installPath in $installPaths) {
+        if (-not $installPath) { continue }
         $fromVswhere = Join-Path $installPath "VC\Auxiliary\Build\vcvars64.bat"
         if (Test-Path $fromVswhere) {
             $vcvarsCandidates = @($fromVswhere) + $vcvarsCandidates
