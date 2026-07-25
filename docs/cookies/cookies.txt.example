@@ -1,0 +1,22 @@
+# Netscape HTTP Cookie File
+# https://curl.haxx.se/rfc/cookie_spec.html
+# Plantilla de Clip Harbour — NO es un archivo utilizable.
+#
+# Las cookies reales solo se obtienen exportándolas desde tu navegador
+# tras iniciar sesión en YouTube. Ver docs/cookies/cookies_info.md
+#
+# Formato de cada línea (tabulaciones entre campos):
+#   dominio  incluirSubdominios  ruta  https  expiración_unix  nombre  valor
+#
+# Ejemplo de estructura (valores ficticios; yt-dlp los ignorará):
+# .youtube.com	TRUE	/	TRUE	0	VISITOR_INFO1_LIVE	ejemplo_no_valido
+# .youtube.com	TRUE	/	TRUE	0	YSC	ejemplo_no_valido
+#
+# Pasos:
+# 1. Firefox → ventana privada → login en YouTube
+# 2. Visita solo https://www.youtube.com/robots.txt
+# 3. Exporta con extensión "Get cookies.txt LOCALLY" (o similar)
+# 4. Guarda como cookies.txt fuera del repo (p. ej. %USERPROFILE%\cookies.txt)
+# 5. En Clip Harbour: sidebar → Elegir cookies.txt
+#
+# No subas cookies.txt a git (contienen tu sesión).

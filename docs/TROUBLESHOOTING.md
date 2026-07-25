@@ -1,0 +1,77 @@
+# Troubleshooting
+
+## Search / downloads only work in the desktop window
+
+Vite in the browser (`localhost:1420`) cannot talk to sidecars. Run:
+
+```powershell
+npm run tauri -- dev
+```
+
+Use the native Clip Harbour window.
+
+## Queue emptied when opening a video
+
+Fixed in this fork: one sidebar outside React Router. If you still see it, hard-reload the Tauri window.
+
+## Open folder / open file fails
+
+Tauri blocks `openPath` unless the path matches `opener:allow-open-path` in [`src-tauri/capabilities/default.json`](../src-tauri/capabilities/default.json). Fase 2 allows Music / Downloads / Documents under the user profile, plus `D:/**` and `E:/**` (covers `Music\MEmu Music`). Restart `tauri -- dev` after capability changes. If your folder is elsewhere, add a pattern there (do not use global `**` without review).
+
+## Search preview vs download metadata
+
+The right preview shows **YouTube video info** from search (views, date, description…).  
+**Embed metadata** on the download screen writes title/artist tags into the audio/video file — a different option, chosen only when downloading.
+
+## Search rows-per-page changes when I resize
+
+By design it should **not** after the first layout for that search. Page size is measured once when results appear, then frozen. Resizing may scroll the list if the window is shorter. A **new** search re-measures at the current height.
+
+## Search preview metadata missing
+
+After ~400 ms hover/selection, Fase 2 calls `get_url_details` once per video id (in-memory cache). Until that finishes you may see “Cargando detalles…”. If enrichment fails (403/rate limit), reexport cookies — see [PHASE2_SETUP.md](./PHASE2_SETUP.md). Full format details also load when you open **Abrir / descargar**.
+
+## Search button keeps spinning
+
+Should stop when the first results stream in. If it stays stuck, hard-reload the Tauri window. Starting a new search cancels the previous one.
+
+## Progress stuck ~50–70% then jumps / finishes
+
+Download maps to 0–70% when a convert is needed; conversion continues 70–100%. If it stalls at 70%, ffmpeg may be failing — check the status line for `error:conversion`.
+
+## Stop freezes the queue
+
+Fixed: stop no longer sleeps while holding the download registry lock. If an item stays `cancelled`, wait a few seconds for cleanup or use **Limpiar terminados**.
+
+## 403 Forbidden
+
+YouTube bot checks. Use **Método A**: export `cookies.txt` and choose it in the sidebar ([PHASE2_SETUP.md](./PHASE2_SETUP.md), [cookies/cookies_info.md](./cookies/cookies_info.md)).
+
+Downloads with cookies configured retry automatically up to **2** times (backoff 2s / 5s, status `retrying`). Search / `get_url_details` do not auto-retry in a loop — reexport cookies if bot-check persists.
+
+## Queue resume after restart
+
+Pending items are snapshotted in `localStorage`. On next launch a banner offers **re-download** (not byte-resume). Dismiss clears the snapshot.
+
+## Blank window after release build
+
+If the UI is blank after tightening CSP (`script-src 'self'`), temporarily restore `'unsafe-inline'` on `script-src` in `tauri.conf.json` and report — Vite production assets should not need it.
+
+## Bulk download fails on some videos
+
+Bulk no longer reuses one numeric format id. It uses `bestaudio/best` per URL.
+
+## Leftover `.webm` after M4A
+
+USB BMW / convert path deletes the source after a **successful** conversion. If convert fails, the source is kept on purpose.
+
+## Sidecars missing on Windows
+
+```powershell
+npm run fetch:sidecars:windows
+npm run smoke:windows
+```
+
+## Tauri docs
+
+Use **https://v2.tauri.app/** for Tauri 2 APIs (this app). The root `tauri.app` site may redirect; prefer the v2 URL explicitly.

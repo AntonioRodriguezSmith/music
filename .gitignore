@@ -7,16 +7,60 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies / build
 node_modules
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# Env (never commit secrets; keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Playwright / Vitest artifacts
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+coverage/
+
+# YouTube session cookies (export from browser; never commit)
+cookies.txt
+**/cookies.txt
+cookies*.txt
+**/cookies*.txt
+*.cookies.txt
+!docs/cookies/cookies.txt.example
+
+# Signing / certs (optional Authenticode)
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Sidecars (fetch with scripts/fetch-windows-sidecars.ps1 — do not commit binaries)
+src-tauri/binaries/*-pc-windows-msvc.exe
+src-tauri/binaries/*-pc-windows-msvc
+src-tauri/binaries/*-unknown-linux-gnu
+src-tauri/binaries/*-apple-darwin
+src-tauri/binaries/*.exe
+
+# Cargo (prefer CARGO_TARGET_DIR under %LOCALAPPDATA% via dev-windows.ps1)
+src-tauri/target/
+src-tauri/.cargo/config.toml
+
+# Unrelated local trees (not part of Clip Harbour)
+web/
+backup-duplicados/
+
+# OS / editor
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.suo
 *.ntvs*
 *.njsproj

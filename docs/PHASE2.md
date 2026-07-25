@@ -1,0 +1,53 @@
+# Fase 2 — resumen
+
+Producto, fiabilidad, ingeniería y release del fork Windows tras el cierre de Fase 1.
+
+**Estado:** cerrada (código + docs + smoke manual 2026-07-25). Veredicto en [PHASE2_AUDIT.md](./PHASE2_AUDIT.md).
+
+## Qué se entregó
+
+| Hito | Contenido |
+|------|-----------|
+| **M0** | Setup Método A (`cookies.txt`); UI cookies solo archivo; [PHASE2_SETUP.md](./PHASE2_SETUP.md) |
+| **M1** | Persistencia de cola (`queue_snapshot` + banner reanudar); abrir fichero desde Historial |
+| **M2** | Retry 403 (≤2, backoff 2s/5s) en descargas si hay cookies; preview enrich debounce 400 ms + cache |
+| **M3** | `lib.rs` partido en `models` / `state` / `ytdlp` / `queue`; CI GitHub Actions; Playwright smoke (Vite) |
+| **M4** | Opener ACL acotada (Music/Downloads/Documents + D:/E:); CSP `script-src 'self'`; script de firma opcional |
+| **M5** | Esta doc + audit/checklist + changelog |
+
+## Cómo usar
+
+En desarrollo **no hay icono de escritorio**: arranca con `npm run tauri -- dev` (o `npm run dev:windows`) y usa la **ventana nativa**, no el browser en `:1420`.
+
+1. **Cookies:** [PHASE2_SETUP.md](./PHASE2_SETUP.md) — exportar Netscape → sidebar → Elegir cookies.txt.
+2. **Cola:** al reiniciar con pendientes, banner “Reanudar N pendientes” → **Reintentar** (re-download, no resume de bytes).
+3. **Historial:** botón Abrir en la fila (ruta absoluta del archivo; ACL Music/Downloads/Documents + D:/E:).
+4. **Preview:** al pasar el ratón ~400 ms se pide `get_url_details` una vez por vídeo (cache en memoria).
+
+## Gate local
+
+```powershell
+npm test
+npm run test:e2e          # tras npm i + npx playwright install
+npm run smoke:windows
+cargo check               # en src-tauri
+```
+
+CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (Vitest + Playwright en Ubuntu; smoke + cargo check en Windows).  
+Release unsigned: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (`workflow_dispatch`).
+
+## Firma de instalador
+
+Sin certificado obligatorio. Con thumbprint o PFX:
+
+```powershell
+$env:CLIP_HARBOUR_CERT_THUMBPRINT = "..."
+npm run sign:windows
+```
+
+Ver [scripts/sign-windows.ps1](../scripts/sign-windows.ps1). Alternativa: Azure Trusted Signing / `signtool` manual.
+
+## Auditoría
+
+- [PHASE2_AUDIT.md](./PHASE2_AUDIT.md)
+- [PHASE2_CHECKLIST.md](./PHASE2_CHECKLIST.md)

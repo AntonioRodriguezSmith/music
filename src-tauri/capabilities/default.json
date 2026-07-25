@@ -5,11 +5,46 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
+    "core:event:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close",
     "opener:allow-open-url",
-    "shell:default",
+    "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        { "path": "C:/Users/*/Music/**" },
+        { "path": "C:/Users/*/Downloads/**" },
+        { "path": "C:/Users/*/Documents/**" },
+        { "path": "$HOME/Music/**" },
+        { "path": "$HOME/Downloads/**" },
+        { "path": "$HOME/Documents/**" },
+        { "path": "D:/**" },
+        { "path": "E:/**" }
+      ]
+    },
     "dialog:default",
-    "dialog:default",
-    "opener:default"
+    "shell:allow-open",
+    "shell:allow-kill",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        { "name": "yt-dlp", "sidecar": true, "args": true },
+        { "name": "binaries/yt-dlp", "sidecar": true, "args": true },
+        { "name": "ffmpeg", "sidecar": true, "args": true },
+        { "name": "binaries/ffmpeg", "sidecar": true, "args": true }
+      ]
+    },
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        { "name": "yt-dlp", "sidecar": true, "args": true },
+        { "name": "binaries/yt-dlp", "sidecar": true, "args": true },
+        { "name": "ffmpeg", "sidecar": true, "args": true },
+        { "name": "binaries/ffmpeg", "sidecar": true, "args": true }
+      ]
+    }
   ]
 }
-

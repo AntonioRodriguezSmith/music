@@ -7,15 +7,25 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "powershell -ExecutionPolicy Bypass -File ./scripts/tauri-windows.ps1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "dev:windows": "powershell -ExecutionPolicy Bypass -File ./dev-windows.ps1",
+    "fetch:sidecars:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-windows-sidecars.ps1",
+    "smoke:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-windows.ps1",
+    "sign:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/sign-windows.ps1",
+    "filter:cookies": "powershell -ExecutionPolicy Bypass -File ./scripts/filter-youtube-cookies.ps1"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.5",
     "@tauri-apps/plugin-shell": "^2.2.0",
+    "i18next": "^26.3.6",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-i18next": "^17.0.10"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.8",
@@ -25,6 +35,8 @@
     "postcss": "^8.5.3",
     "react-router-dom": "^7.2.0",
     "tailwindcss": "^3.4.17",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "@playwright/test": "^1.54.1",
+    "vitest": "^3.2.7"
   }
 }

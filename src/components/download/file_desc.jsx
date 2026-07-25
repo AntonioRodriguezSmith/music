@@ -1,66 +1,152 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Options from "./options";
 import Arrow from "../svg/arrow";
 import Plus from "../svg/plus";
-import { openUrl } from '@tauri-apps/plugin-opener';
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useVideo } from "../../providers/video_context";
 import DownloadConfig from "./download_config";
+import { buildKeyDataItems } from "../../lib/format_details";
+import {
+  loadDownloadMode,
+  pickBestAudioFormatIndex,
+  saveDownloadMode,
+} from "../../lib/download_mode";
 
 export default function FileDesc() {
-   const [curr, setCurr] = useState(0);
-   const [collapse, setCollapse] = useState(false);
-   const { selectedVideo } = useVideo();
+  const { t } = useTranslation();
+  const [curr, setCurr] = useState(0);
+  const [collapse, setCollapse] = useState(true);
+  const [downloadMode, setDownloadMode] = useState(loadDownloadMode);
+  const [userPickedFormat, setUserPickedFormat] = useState(false);
+  const [userPickedOutput, setUserPickedOutput] = useState(false);
+  const { selectedVideo, bulkSelection } = useVideo();
 
-   if (!selectedVideo) {
-      return (
-         <div className="flex items-center justify-center min-h-screen">
-            <p className="text-[3vw] font-light animate-pulse ml-[4vw]">Fetching...</p>
-         </div>
-      );
-   }
+  useEffect(() => {
+    setUserPickedFormat(false);
+    setUserPickedOutput(false);
+  }, [selectedVideo?.url]);
 
-   return (
-      <div className="flex-1 min-h-full flex-col">
-         <div className="flex">
-            <Link to='/' className="rotate-90 size-16 border border-solid rounded-full border-black"><Arrow /></Link>
-         </div>
-         <div className="flex">
-            <div className="flex-[1.5] max-h-[87vh] overflow-scroll">
-               <div onClick={() => setCollapse(!collapse)} className={`${collapse ? "" : "min-h-[30vh]"} flex flex-col`}>
-                  <button className={`${collapse ? "text-black" : "bg-black text-[#ffffff]"} min-h-[7vh] border border-black border-solid flex items-center text-[2vw] pl-[2vw] sticky top-0`}>
-                     <span className="size-10"><Plus /></span> Key Data
-                  </button>
-                  <div className={`min-h-[18vh] max-h-[22vh] overflow-y-auto grid grid-cols-2 px-[2vw] py-[1vw] gap-[0.3vw] ${collapse ? "hidden" : ""}`}>
-                     {Object.keys(selectedVideo.formats[0] || {}).map((key, index) => (
-                        selectedVideo.formats[curr][key] ?
-                           <div key={index} className="flex text-[1.3vw]">
-                              <p className="-rotate-90 size-7 mr-[0.5vw]"><Arrow /></p>
-                              {key}: <span className="font-medium ml-[0.3vw]">{key == "bitrate" ? selectedVideo.formats[curr][key].toFixed(2) + " Kbps" : selectedVideo.formats[curr][key]}</span>
-                           </div> : null
-                     ))}
-                  </div>
-               </div>
-               <button onClick={() => setCollapse(!collapse)} className={`w-full sticky top-0 hover:bg-black hover:text-[#ffffff] ${collapse ? "bg-black text-[#ffffff] border-[#ffffff] border-b" : "border-black border-y"} min-h-[7vh] border-solid flex items-center pl-[2vw] text-[2vw]`}>
-                  <span className="size-10"><Plus /></span> Available Formats
-               </button>
-               <Options setCurr={setCurr} curr={curr} collapse={collapse} selectedVideo={selectedVideo} />
-            </div>
-            <div className="flex-1 flex flex-col">
-               <div className="bg-orange-500 flex border-black border border-solid">
-                  <img
-                     src={selectedVideo?.thumbnail}
-                     alt="Thumbnail"
-                     className="object-cover object-top flex-1 bg-green-50 shadow-[0_0px_2px_rgba(0,_0,_0,_0.7)]"
-                  />
-               </div>
-               <div className="flex flex-col items-start">
-                  <p className="text-[2vw] ml-[1vw]">{selectedVideo?.title}</p>
-                  <div onClick={() => { openUrl(selectedVideo?.url) }} className="text-[1.5vw] ml-[1vw] underline cursor-pointer transition-all duration-100 hover:text-blue-500 hover:underline">{selectedVideo?.url}</div>
-               </div>
-               <DownloadConfig selectedVideo={selectedVideo} curr={curr} />
-            </div>
-         </div>
+  useEffect(() => {
+    if (!selectedVideo?.formats?.length || userPickedFormat) return;
+    setCurr(pickBestAudioFormatIndex(selectedVideo.formats));
+  }, [selectedVideo?.url, selectedVideo?.formats, downloadMode, userPickedFormat]);
+
+  const handleModeChange = (mode) => {
+    saveDownloadMode(mode);
+    setDownloadMode(mode);
+    setUserPickedFormat(false);
+    setUserPickedOutput(false);
+  };
+
+  if (!selectedVideo) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 min-h-0 overflow-hidden">
+        <p className="text-2xl font-light animate-pulse">{t("download.fetching")}</p>
+        <Link to="/" className="text-sm underline">
+          {t("download.backToSearch")}
+        </Link>
+        <p className="text-sm text-gray-600 max-w-md text-center px-4">{t("download.fetchHint")}</p>
       </div>
-   );
+    );
+  }
+
+  const selectedFormat = selectedVideo.formats?.[curr];
+  const keyDataItems = selectedFormat ? buildKeyDataItems(selectedFormat, t) : [];
+
+  return (
+    <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      <div className="flex shrink-0 p-2">
+        <Link
+          to="/"
+          className="rotate-90 size-10 border border-solid rounded-full border-black flex items-center justify-center"
+        >
+          <Arrow />
+        </Link>
+      </div>
+      {bulkSelection.length > 1 ? (
+        <p className="shrink-0 text-sm px-3 py-1 bg-black text-white">
+          {t("download.bulkBanner", { count: bulkSelection.length })}
+        </p>
+      ) : null}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="flex-[1.5] min-h-0 overflow-hidden flex flex-col border-r border-black">
+          <button
+            type="button"
+            onClick={() => setCollapse(!collapse)}
+            className={`${
+              collapse ? "text-black" : "bg-black text-white"
+            } shrink-0 min-h-10 border-b border-black flex items-center text-base pl-3`}
+          >
+            <span className="size-6 mr-1">
+              <Plus />
+            </span>
+            {t("download.keyData")}
+          </button>
+          {!collapse ? (
+            <div className="shrink-0 grid grid-cols-2 px-3 py-2 gap-x-2 gap-y-1 text-xs max-h-32 overflow-y-auto">
+              {keyDataItems.map((item) => (
+                <div key={item.key} className="flex min-w-0 truncate">
+                  <span className="mr-1 shrink-0">{item.label}:</span>
+                  <span className="font-medium truncate">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setCollapse(true)}
+            className={`w-full shrink-0 hover:bg-black hover:text-white ${
+              collapse
+                ? "bg-black text-white border-white border-b"
+                : "border-black border-y"
+            } min-h-10 border-solid flex items-center pl-3 text-base`}
+          >
+            <span className="size-6 mr-1">
+              <Plus />
+            </span>
+            {t("download.availableFormats")}
+          </button>
+          <div className="flex-1 min-h-0 overflow-hidden h-full">
+            <Options
+              setCurr={setCurr}
+              curr={curr}
+              selectedVideo={selectedVideo}
+              onUserPickFormat={() => setUserPickedFormat(true)}
+            />
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="shrink-0 h-40 border-b border-black flex overflow-hidden">
+            <img
+              src={selectedVideo?.thumbnail}
+              alt={t("search.thumbnail")}
+              className="object-cover object-top w-full h-full bg-green-50"
+            />
+          </div>
+          <div className="shrink-0 flex flex-col items-start px-2 py-1">
+            <p className="text-base font-medium truncate w-full">{selectedVideo?.title}</p>
+            <button
+              type="button"
+              onClick={() => openUrl(selectedVideo?.url)}
+              className="text-xs underline truncate max-w-full text-left hover:text-blue-500"
+            >
+              {selectedVideo?.url}
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <DownloadConfig
+              selectedVideo={selectedVideo}
+              curr={curr}
+              downloadMode={downloadMode}
+              onDownloadModeChange={handleModeChange}
+              userPickedOutput={userPickedOutput}
+              onUserPickedOutput={() => setUserPickedOutput(true)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

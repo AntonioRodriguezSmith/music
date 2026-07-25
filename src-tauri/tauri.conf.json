@@ -12,13 +12,24 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "clip_harbour",
-        "width": 1600,
-        "height": 900
+        "width": 1440,
+        "height": 810,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "maximized": false,
+        "fullscreen": false,
+        "decorations": false,
+        "shadow": true,
+        "transparent": true,
+        "resizable": true,
+        "center": true
       }
     ],
+    "withGlobalTauri": false,
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost; script-src 'self'"
     }
   },
   "bundle": {

@@ -1,25 +1,40 @@
 import SearchBar from "./components/search/search_bar";
 import SearchResults from "./components/search/results";
 import { useVideo } from "./providers/video_context";
-import SideBar from "./components/menu/sidebar";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-export default function Home({open, setOpen}){
-    const [isFocused, setIsFocused] = useState(false);
-    const { setSelectedVideo, searchResults } = useVideo();
-    return(
-        <div className="flex flex-1">
-            <SideBar open={open} setOpen={setOpen} />
-            <div className="flex-1 flex flex-col">
-                <div className={`flex transition-all duration-300 ${isFocused || searchResults ? "justify-center mt-2" : "justify-center mt-[40vh]"}`}>
-                <SearchBar setIsFocused={setIsFocused} isFocused={isFocused} />
-                </div>
+export default function Home({ open }) {
+  const { t } = useTranslation();
+  const [isFocused, setIsFocused] = useState(false);
+  const { searchResults } = useVideo();
+  const hasResults = Boolean(searchResults);
+  const showResultsPane = isFocused || hasResults;
+  const showIdleHint = !hasResults && !isFocused;
 
-                <div className="h-[1px] bg-black w-full my-[1vw]"></div>
-                <div className="flex-1 flex">
-                <SearchResults open={open} setOpen={setOpen} />
-                </div>
-            </div>
+  return (
+    <div className="flex flex-1 min-h-0 overflow-hidden flex-col">
+      <div
+        className={`flex shrink-0 justify-center transition-all duration-300 ${
+          showResultsPane ? "py-3" : "flex-1 items-center"
+        }`}
+      >
+        <div className="flex flex-col items-center gap-3 px-4">
+          <SearchBar setIsFocused={setIsFocused} isFocused={isFocused} />
+          {showIdleHint ? (
+            <p className="text-sm text-[#555] text-center max-w-md leading-relaxed">
+              {t("search.noResultsYet")}
+            </p>
+          ) : null}
         </div>
-    )
+      </div>
+
+      {showResultsPane ? <div className="h-px bg-black w-full shrink-0" /> : null}
+      {showResultsPane ? (
+        <div className="flex-1 flex min-h-0 overflow-hidden">
+          <SearchResults open={open} />
+        </div>
+      ) : null}
+    </div>
+  );
 }
