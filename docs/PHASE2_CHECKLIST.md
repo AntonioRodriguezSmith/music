@@ -1,6 +1,6 @@
 # Fase 2 — checklist
 
-Use the **native Tauri window** (`npm run tauri -- dev` or `npm run dev:windows`). No desktop icon in dev — that command is the launcher.
+Use the **native Tauri window** (`npm run tauri -- dev`, `npm run dev:windows`, or the **Clip Harbour** desktop shortcut / `npm run launch:windows` — see [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md)).
 
 ## M0 Setup / cookies
 
