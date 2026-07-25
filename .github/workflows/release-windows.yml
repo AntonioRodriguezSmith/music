@@ -14,8 +14,8 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
@@ -28,7 +28,7 @@ jobs:
         run: |
           Get-ChildItem -Recurse "$env:CARGO_TARGET_DIR/release/bundle" -ErrorAction SilentlyContinue |
             Select-Object FullName, Length
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: windows-installers-unsigned
           if-no-files-found: error
