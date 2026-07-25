@@ -12,9 +12,10 @@ Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 - **Downloads:** 403/bot-check retry ≤2 with backoff when cookies present; status `retrying`.
 - **Preview:** debounce 400 ms + in-memory `get_url_details` cache.
 - **Rust:** `lib.rs` split into `models` / `state` / `ytdlp` / `queue`.
-- **CI:** `.github/workflows/ci.yml` + Playwright Vite smoke; `release-windows.yml` for unsigned artifacts.
+- **CI:** `.github/workflows/ci.yml` + Playwright Vite smoke; `release-windows.yml` pins `CARGO_TARGET_DIR` to `src-tauri/target` on Actions so MSI/NSIS upload works (local builds still use `%LOCALAPPDATA%\clip_harbour-target`).
 - **Security:** opener ACL (Music/Downloads/Documents + D:/E:); CSP `script-src 'self'`; optional `scripts/sign-windows.ps1` (skip exit 0 without cert).
 - **Launch (dev):** `npm run tauri -- dev` / `npm run dev:windows`, or desktop shortcut **Clip Harbour** with splash (no console) — [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md); assets in `assets/clip-harbour-app-icon.*`.
+- **Not in Phase 2:** portable ZIP package; unified Tauri window icons with splash CH mark (optional follow-up).
 
 ## 2026-07 — Phase 1 closeout
 

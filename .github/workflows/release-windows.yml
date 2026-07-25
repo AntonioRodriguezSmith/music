@@ -1,7 +1,14 @@
 name: Release Windows (unsigned)
 
+# Builds MSI + NSIS via npm run tauri -- build (scripts/tauri-windows.ps1).
+# Pin CARGO_TARGET_DIR to the repo so upload-artifact matches the bundle path.
+# (Locally, setup-windows-env.ps1 defaults to %LOCALAPPDATA%\clip_harbour-target.)
+
 on:
   workflow_dispatch:
+
+env:
+  CARGO_TARGET_DIR: ${{ github.workspace }}/src-tauri/target
 
 jobs:
   build:
@@ -16,9 +23,15 @@ jobs:
       - run: npm ci
       - run: npm run fetch:sidecars:windows
       - run: npm run tauri -- build
+      - name: List bundle outputs
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse "$env:CARGO_TARGET_DIR/release/bundle" -ErrorAction SilentlyContinue |
+            Select-Object FullName, Length
       - uses: actions/upload-artifact@v4
         with:
           name: windows-installers-unsigned
+          if-no-files-found: error
           path: |
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe

@@ -123,8 +123,6 @@
   "cookies": {
     "title": "Cookies de YouTube",
     "hint": "Necesarias cuando YouTube pide confirmar que no eres un bot. Exporta un cookies.txt (formato Netscape) e indícalo aquí. Ver docs/PHASE2_SETUP.md.",
-    "fromBrowser": "Desde el navegador",
-    "none": "(ninguno)",
     "file": "Archivo: {{path}}",
     "noFile": "ninguno",
     "chooseFile": "Elegir cookies.txt",

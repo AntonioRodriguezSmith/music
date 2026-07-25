@@ -33,8 +33,8 @@ npm run smoke:windows
 cargo check               # en src-tauri
 ```
 
-CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (Vitest + Playwright en Ubuntu; smoke + cargo check en Windows).  
-Release unsigned: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (`workflow_dispatch`).
+CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (Vitest + Playwright en Ubuntu; smoke + cargo check en Windows) — verde en `main` (2026-07-25).  
+Release unsigned: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (`workflow_dispatch`). En CI fija `CARGO_TARGET_DIR` a `src-tauri/target` para que los artefactos coincidan con `upload-artifact`. En local los instaladores salen bajo `%LOCALAPPDATA%\clip_harbour-target` (ver [cookies/WINDOWS.md](./cookies/WINDOWS.md)). No hay paquete portable ZIP en Fase 2.
 
 ## Firma de instalador
 

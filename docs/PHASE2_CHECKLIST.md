@@ -34,6 +34,7 @@ Use the **native Tauri window** (`npm run tauri -- dev`, `npm run dev:windows`, 
 - [x] Abrir carpeta / archivo en `...\Music\MEmu Music\...` (ACL `C:/Users/*/Music/**`)
 - [x] CSP `script-src 'self'` en `tauri.conf.json` (app arranca en `tauri -- dev`)
 - [x] `npm run sign:windows` sin env → skip exit 0
+- [x] `release-windows.yml`: `CARGO_TARGET_DIR` alineado con `upload-artifact` (2026-07-25)
 
 ## M5 Docs
 

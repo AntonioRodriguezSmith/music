@@ -35,7 +35,13 @@ Outputs (relative to `CARGO_TARGET_DIR`):
 - `release\bundle\msi\clip_harbour_0.1.0_x64_en-US.msi`
 - `release\bundle\nsis\clip_harbour_0.1.0_x64-setup.exe`
 
-Installers are **unsigned** (code signing is Phase 2). Upstream GitHub releases remain Linux-oriented; this fork builds Windows packages locally.
+Installers are **unsigned** by default (`npm run sign:windows` skips without cert). Upstream GitHub releases remain Linux-oriented; this fork builds Windows packages locally.
+
+### GitHub Actions release (`workflow_dispatch`)
+
+[`.github/workflows/release-windows.yml`](../../.github/workflows/release-windows.yml) sets `CARGO_TARGET_DIR` to `src-tauri/target` on the runner so MSI/NSIS match `upload-artifact`. Locally keep the default under `%LOCALAPPDATA%\clip_harbour-target` (avoids synced folders). Do not mix those paths when collecting artifacts.
+
+There is **no portable ZIP** package in Fase 1/2 — only MSI, NSIS setup, and the release `.exe` under `CARGO_TARGET_DIR`.
 
 ## What changed
 
@@ -115,7 +121,7 @@ Installers are **unsigned** (code signing is Phase 2). Upstream GitHub releases 
 | Symptom | Check |
 |---------|--------|
 | `failed to get cargo metadata: program not found` | Terminal sin `%USERPROFILE%\.cargo\bin`. Usa `npm run tauri -- dev` (wrapper) o `npm run dev:windows`. Abre una **nueva** terminal tras el cambio de `.vscode/settings.json`. |
-| YouTube “Sign in to confirm you’re not a bot” | Open sidebar → **YouTube cookies**: pick `cookies.txt` (best) or try **firefox**. Chrome/Edge often fail on Windows. Full guide: [cookies_info.md](./cookies_info.md) and [yt-dlp wiki](https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies). Also update yt-dlp: `npm run fetch:sidecars:windows`. |
+| YouTube “Sign in to confirm you’re not a bot” | Sidebar → **Elegir cookies.txt** (Método A / Netscape). Ver [PHASE2_SETUP.md](../PHASE2_SETUP.md) y [cookies_info.md](./cookies_info.md). Actualiza yt-dlp: `npm run fetch:sidecars:windows`. |
 | Stuck on Fetching… / invoke “does nothing” | Are you in the **desktop** window, not the browser? Open DevTools (Ctrl+Shift+I) there. |
 | Sidecar / yt-dlp errors | Re-run `npm run fetch:sidecars:windows`; confirm files exist under `src-tauri/binaries/`. |
 | MSVC / `winapifamily.h` missing | Install full Windows SDK; `setup-windows-env.ps1` prepends system SDK includes. |

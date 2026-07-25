@@ -67,6 +67,10 @@ Pending items are snapshotted in `localStorage`. On next launch a banner offers 
 
 If the UI is blank after tightening CSP (`script-src 'self'`), temporarily restore `'unsafe-inline'` on `script-src` in `tauri.conf.json` and report — Vite production assets should not need it.
 
+## Release workflow uploads nothing (GitHub Actions)
+
+`npm run tauri -- build` uses `CARGO_TARGET_DIR`. Locally that defaults to `%LOCALAPPDATA%\clip_harbour-target`. The Actions release workflow **must** set `CARGO_TARGET_DIR` to `src-tauri/target` (see `.github/workflows/release-windows.yml`) so `upload-artifact` finds MSI/NSIS. If you override the env locally, collect artefacts from that same directory.
+
 ## Bulk download fails on some videos
 
 Bulk no longer reuses one numeric format id. It uses `bestaudio/best` per URL.
