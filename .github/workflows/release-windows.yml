@@ -23,6 +23,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
+      # First run after lockfile change is still cold; later dispatches restore this cache.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
       - run: npm ci
       - run: npm run fetch:sidecars:windows
       - name: Build installers
