@@ -27,7 +27,7 @@ Use the **native Tauri window** (`npm run tauri -- dev` or `npm run dev:windows`
 - [x] `lib.rs` partido en `models` / `state` / `ytdlp` / `queue` (compila vía `tauri -- dev`)
 - [x] `npm test` OK (incl. `queue_snapshot`, `cookies_prefs`, `download_history` — 2026-07-25)
 - [x] Playwright e2e + workflow CI presentes (`e2e/smoke.spec.js`, `.github/workflows/ci.yml`)
-- [ ] CI verde en remote Actions (cuando haya push/PR con Actions habilitado)
+- [x] CI verde en remote Actions (run OK 2026-07-25 tras push a `main`)
 
 ## M4 Release / seguridad
 
