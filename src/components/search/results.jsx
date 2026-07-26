@@ -34,6 +34,7 @@ export default function SearchResults({ open }) {
     toggleBulkItem,
     isBulkSelected,
     setBulkSelection,
+    clearBulkSelection,
     searchPage,
     setSearchPage,
     enrichVideoDetails,
@@ -218,6 +219,8 @@ export default function SearchResults({ open }) {
   async function openResult(item) {
     try {
       setConfiguring(true);
+      // Single-video open must not keep a prior multi-select as bulk download.
+      clearBulkSelection();
       let video = item;
       if (!item.formats?.length) {
         video = await invoke("get_url_details", {

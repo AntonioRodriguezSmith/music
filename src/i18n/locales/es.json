@@ -6,11 +6,6 @@
     "close": "Cerrar"
   },
   "sidebar": {
-    "queue": "Cola",
-    "viewAll": "Ver todo",
-    "viewPaged": "Ver por páginas",
-    "history": "Historial",
-    "historyHint": "Descargas terminadas y búsquedas",
     "tabQueue": "Cola",
     "tabHistory": "Historial",
     "clearFinished": "Limpiar terminados",
@@ -23,6 +18,7 @@
     "openFileFailed": "No se pudo abrir el archivo. Comprueba que exista y la carpeta esté permitida.",
     "retry": "Reintentar",
     "resumePending": "Reanudar {{count}} pendientes",
+    "resumeFailed": "No se pudo reanudar",
     "dismissResume": "Descartar",
     "batchDone": "Lote terminado",
     "setFolder": "Carpeta de descarga",
@@ -64,7 +60,6 @@
     "likes": "Me gusta",
     "uploadDate": "Fecha",
     "videoId": "ID",
-    "description": "Descripción",
     "live": "En directo",
     "historyTitle": "Búsquedas recientes",
     "historyClear": "Borrar historial",

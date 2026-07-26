@@ -9,6 +9,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useVideo } from "../../providers/video_context";
 import { useDownloadQueue } from "../../providers/download_queue_context";
 import { buildDownloadPayload } from "../../lib/build_download_payload";
+import { shouldTreatAsBulk } from "../../lib/bulk_download";
 import { MODES, defaultOutputExt, resolveOutputExt } from "../../lib/download_mode";
 
 const FULL_OUTPUT_EXTS = ["mp4", "mkv", "mov", "webm", "mp3", "m4a"];
@@ -85,7 +86,7 @@ export default function DownloadConfig({
       return;
     }
     setBusy(true);
-    const isBulk = bulkSelection.length > 1;
+    const isBulk = shouldTreatAsBulk(bulkSelection);
     const targets = isBulk
       ? bulkSelection
       : [{ url: selectedVideo.url, title: selectedVideo.title }];

@@ -6,11 +6,6 @@
     "close": "Close"
   },
   "sidebar": {
-    "queue": "Queue",
-    "viewAll": "View all",
-    "viewPaged": "Show pages",
-    "history": "History",
-    "historyHint": "Finished downloads and searches",
     "tabQueue": "Queue",
     "tabHistory": "History",
     "clearFinished": "Clear finished",
@@ -23,6 +18,7 @@
     "openFileFailed": "Could not open the file. Check that it exists and the folder is allowed.",
     "retry": "Retry",
     "resumePending": "Resume {{count}} pending",
+    "resumeFailed": "Could not resume",
     "dismissResume": "Dismiss",
     "batchDone": "Batch finished",
     "setFolder": "Set Download Folder",
@@ -64,7 +60,6 @@
     "likes": "Likes",
     "uploadDate": "Uploaded",
     "videoId": "ID",
-    "description": "Description",
     "live": "Live",
     "historyTitle": "Recent searches",
     "historyClear": "Clear history",

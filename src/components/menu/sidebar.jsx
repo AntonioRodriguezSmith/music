@@ -30,6 +30,7 @@ export default function SideBar({ open, setOpen }) {
     toast,
     clearToast,
     resumeItems,
+    resumeError,
     resumePending,
     dismissResume,
   } = useDownloadQueue();
@@ -191,6 +192,11 @@ export default function SideBar({ open, setOpen }) {
               {resumeItems.length > 0 ? (
                 <div className="shrink-0 mb-2 border border-black p-2 text-xs space-y-1 bg-[#f4f4f4]">
                   <p>{t("sidebar.resumePending", { count: resumeItems.length })}</p>
+                  {resumeError ? (
+                    <p className="text-red-700 whitespace-pre-wrap break-words" role="alert">
+                      {t("sidebar.resumeFailed")}: {resumeError}
+                    </p>
+                  ) : null}
                   <div className="flex gap-2">
                     <button
                       type="button"

@@ -26,9 +26,11 @@ const DownloadQueueContext = createContext({
   toast: null,
   clearToast: () => {},
   resumeItems: [],
+  resumeError: null,
   registerDownloadConfig: () => {},
   resumePending: async () => {},
   dismissResume: () => {},
+  clearResumeError: () => {},
 });
 
 export function DownloadQueueProvider({ children }) {
@@ -36,6 +38,7 @@ export function DownloadQueueProvider({ children }) {
   const [history, setHistory] = useState(() => loadDownloadHistory());
   const [toast, setToast] = useState(null);
   const [resumeItems, setResumeItems] = useState(() => normalizeSnapshotForResume());
+  const [resumeError, setResumeError] = useState(null);
   const prevRef = useRef({});
   const configsRef = useRef(new Map());
 
@@ -47,19 +50,25 @@ export function DownloadQueueProvider({ children }) {
   const dismissResume = useCallback(() => {
     clearQueueSnapshot();
     setResumeItems([]);
+    setResumeError(null);
   }, []);
+
+  const clearResumeError = useCallback(() => setResumeError(null), []);
 
   const resumePending = useCallback(async () => {
     if (!isTauri() || resumeItems.length === 0) {
       dismissResume();
       return;
     }
+    setResumeError(null);
     const failures = [];
+    const remaining = [];
     for (const item of resumeItems) {
       try {
         const processId = await invoke("start_download", { config: item.config });
         registerDownloadConfig(processId, item.config);
       } catch (err) {
+        remaining.push(item);
         failures.push(
           `${item.title || item.url}: ${
             typeof err === "string" ? err : err?.message || "failed"
@@ -67,10 +76,13 @@ export function DownloadQueueProvider({ children }) {
         );
       }
     }
-    clearQueueSnapshot();
-    setResumeItems([]);
-    if (failures.length) {
-      console.error(failures.join("\n"));
+    if (remaining.length === 0) {
+      clearQueueSnapshot();
+      setResumeItems([]);
+    } else {
+      saveQueueSnapshot(remaining);
+      setResumeItems(remaining);
+      setResumeError(failures.join("\n"));
     }
   }, [dismissResume, registerDownloadConfig, resumeItems]);
 
@@ -134,11 +146,19 @@ export function DownloadQueueProvider({ children }) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const items = buildQueueSnapshot(configsRef.current, downloads);
-      saveQueueSnapshot(items);
+      const live = buildQueueSnapshot(configsRef.current, downloads);
+      // Keep failed resume rows until dismiss/success (live save must not wipe them).
+      const liveKeys = new Set(
+        live.map((i) => `${i.config?.url || ""}|${i.config?.output_path || ""}`),
+      );
+      const extras = resumeItems.filter((item) => {
+        const key = `${item.config?.url || ""}|${item.config?.output_path || ""}`;
+        return Boolean(item?.config?.url) && !liveKeys.has(key);
+      });
+      saveQueueSnapshot([...live, ...extras]);
     }, 300);
     return () => clearTimeout(timer);
-  }, [downloads]);
+  }, [downloads, resumeItems]);
 
   return (
     <DownloadQueueContext.Provider
@@ -150,9 +170,11 @@ export function DownloadQueueProvider({ children }) {
         toast,
         clearToast: () => setToast(null),
         resumeItems,
+        resumeError,
         registerDownloadConfig,
         resumePending,
         dismissResume,
+        clearResumeError,
       }}
     >
       {children}
