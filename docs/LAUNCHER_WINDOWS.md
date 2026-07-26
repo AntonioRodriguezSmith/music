@@ -47,11 +47,12 @@ $sc.Save()
 
 ## Comportamiento
 
-1. `wscript` lanza PowerShell **Hidden** + **STA** con `launch-clip-harbour.ps1`.
+1. `wscript` lanza **Windows PowerShell System32** (`C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`) en **Hidden** + **STA** — no el stub `WindowsApps\powershell.exe`.
 2. El splash muestra etapas aproximadas (tiempo): preparando → cargando → compilando → abriendo → casi listo.
-3. En paralelo arranca `dev-windows.ps1` sin ventana.
-4. El splash espera un proceso `clip_harbour*` con ventana principal; entonces se cierra.
-5. Log de arranque (si falla): `%TEMP%\clip-harbour-launch.log`.
+3. En paralelo arranca `dev-windows.ps1` en un proceso **detached** (cerrar el splash no mata `tauri dev`).
+4. El splash espera el proceso exacto `clip_harbour` con ventana principal; entonces se cierra.
+5. Fail-fast: falta `dev-windows.ps1`, hijo con exit ≠ 0, o exit 0 sin ventana en ~45 s.
+6. Log de arranque: `%TEMP%\clip-harbour-launch.log`.
 
 **Nota:** la primera vez (o tras cambios Rust) la compilación puede tardar varios minutos; el splash permanece hasta que abre la UI o hasta timeout (~10 min).
 

@@ -5,14 +5,14 @@
 #>
 $ErrorActionPreference = "Stop"
 
-# WinForms needs STA
+# Prefer System32 Windows PowerShell (Explorer/wscript often hit the WindowsApps stub).
+$psExe = Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe"
+if (-not (Test-Path -LiteralPath $psExe)) { $psExe = "powershell.exe" }
+
+# WinForms needs STA. Quote -File path (repo may live under "Proton Drive").
 if ([System.Threading.Thread]::CurrentThread.GetApartmentState() -ne "STA") {
-  $arg = @(
-    "-NoProfile", "-STA", "-ExecutionPolicy", "Bypass",
-    "-WindowStyle", "Hidden",
-    "-File", "`"$PSCommandPath`""
-  )
-  Start-Process -FilePath "powershell.exe" -ArgumentList $arg -WindowStyle Hidden | Out-Null
+  $argLine = "-NoProfile -STA -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSCommandPath`""
+  Start-Process -FilePath $psExe -ArgumentList $argLine -WindowStyle Hidden | Out-Null
   exit 0
 }
 
@@ -26,9 +26,22 @@ $iconIco = Join-Path $root "assets\clip-harbour-app-icon.ico"
 $logFile = Join-Path $env:TEMP "clip-harbour-launch.log"
 $devScript = Join-Path $root "dev-windows.ps1"
 
+function Write-LaunchLog([string]$text) {
+  try {
+    $line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $text"
+    Add-Content -Path $logFile -Value $line -Encoding utf8 -ErrorAction SilentlyContinue
+  } catch { }
+}
+
 function Get-ClipHarbourProcess {
-  Get-Process -Name "clip_harbour*" -ErrorAction SilentlyContinue |
-    Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero }
+  # Exact name only — never match InterLocu / other node apps.
+  # Path may be empty under some ACLs; prefer path match when available.
+  Get-Process -Name "clip_harbour" -ErrorAction SilentlyContinue |
+    Where-Object {
+      if ($_.MainWindowHandle -eq [IntPtr]::Zero) { return $false }
+      if (-not $_.Path) { return $true }
+      return ($_.Path -like "*clip_harbour*" -or $_.Path -like "*clip-harbour*")
+    }
 }
 
 function Show-ExistingWindow {
@@ -44,8 +57,13 @@ public static class NativeFocus {
 "@ -ErrorAction SilentlyContinue
   [void][NativeFocus]::ShowWindowAsync($proc.MainWindowHandle, 9) # SW_RESTORE
   [void][NativeFocus]::SetForegroundWindow($proc.MainWindowHandle)
+  Write-LaunchLog "Focused existing clip_harbour pid=$($proc.Id) path=$($proc.Path)"
   return $true
 }
+
+try {
+  Set-Content -Path $logFile -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') launcher start root=$root" -Encoding utf8
+} catch { }
 
 if (Show-ExistingWindow) { exit 0 }
 
@@ -109,34 +127,28 @@ $progress.Location = New-Object System.Drawing.Point([int](($form.Width - 280) /
 
 $form.Controls.AddRange(@($picture, $title, $status, $progress))
 
-# Start Tauri / app in a hidden PowerShell child
-$startInfo = New-Object System.Diagnostics.ProcessStartInfo
-$startInfo.FileName = "powershell.exe"
-$startInfo.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$devScript`""
-$startInfo.WorkingDirectory = $root
-$startInfo.UseShellExecute = $false
-$startInfo.CreateNoWindow = $true
-$startInfo.RedirectStandardOutput = $true
-$startInfo.RedirectStandardError = $true
-$startInfo.StandardOutputEncoding = [System.Text.Encoding]::UTF8
-$startInfo.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+if (-not (Test-Path -LiteralPath $devScript)) {
+  Write-LaunchLog "Missing $devScript"
+  [System.Windows.Forms.MessageBox]::Show(
+    "No se encontro dev-windows.ps1 en:`r`n$devScript",
+    "Clip Harbour",
+    [System.Windows.Forms.MessageBoxButtons]::OK,
+    [System.Windows.Forms.MessageBoxIcon]::Error
+  ) | Out-Null
+  exit 1
+}
 
-$child = New-Object System.Diagnostics.Process
-$child.StartInfo = $startInfo
-$null = $child.Start()
+# Start Tauri in a detached hidden PowerShell so closing the splash does not
+# kill npm/cargo/clip_harbour (redirected pipes would keep the child attached).
+$argLine = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$devScript`""
+Write-LaunchLog "Starting detached via $psExe : $devScript"
 
-# Async log drain (avoid pipe fill)
-$logSb = New-Object System.Text.StringBuilder
-$child.add_OutputDataReceived({
-  param($s, $e)
-  if ($e.Data) { [void]$logSb.AppendLine($e.Data) }
-})
-$child.add_ErrorDataReceived({
-  param($s, $e)
-  if ($e.Data) { [void]$logSb.AppendLine($e.Data) }
-})
-$child.BeginOutputReadLine()
-$child.BeginErrorReadLine()
+$child = Start-Process -FilePath $psExe `
+  -ArgumentList $argLine `
+  -WorkingDirectory $root `
+  -WindowStyle Hidden `
+  -PassThru
+Write-LaunchLog "Child powershell pid=$($child.Id)"
 
 $stages = @(
   @{ At = 0;    Text = "Preparando entorno..." },
@@ -149,6 +161,8 @@ $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $done = $false
 $failed = $false
 $maxSeconds = 600
+# If the wrapper exits successfully but no window appears, fail sooner than maxSeconds.
+$quietExitGraceSeconds = 45
 
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 250
@@ -170,9 +184,19 @@ $timer.Add_Tick({
     return
   }
 
-  if ($child.HasExited -and -not (Get-ClipHarbourProcess)) {
-    # Give a short grace period: tauri may spawn then exit the wrapper
-    if ($sec -gt 15 -and $child.ExitCode -ne 0) {
+  if ($child -and $child.HasExited -and -not (Get-ClipHarbourProcess)) {
+    $code = $child.ExitCode
+    # Fail-fast on any non-zero exit (do not wait 15s).
+    if ($code -ne 0) {
+      Write-LaunchLog "Child exited code=$code"
+      $script:failed = $true
+      $timer.Stop()
+      $form.Close()
+      return
+    }
+    # Exit 0 but no window: wrapper finished without launching UI.
+    if ($sec -ge $quietExitGraceSeconds) {
+      Write-LaunchLog "Child exited 0 with no clip_harbour window after ${quietExitGraceSeconds}s"
       $script:failed = $true
       $timer.Stop()
       $form.Close()
@@ -191,7 +215,7 @@ $timer.Add_Tick({
 $form.Add_Shown({ $timer.Start() })
 $form.Add_FormClosed({
   $timer.Stop()
-  try { [System.IO.File]::WriteAllText($logFile, $logSb.ToString()) } catch { }
+  try { Write-LaunchLog "splash closed done=$done failed=$failed" } catch { }
 })
 
 [void]$form.ShowDialog()

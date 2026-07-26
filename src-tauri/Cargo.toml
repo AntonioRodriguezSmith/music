@@ -14,6 +14,12 @@ edition = "2021"
 name = "clip_harbour_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+# MSVC link.exe progress in non-English locales ("Creando biblioteca…") is
+# forwarded as warn(linker_messages) by rustc 1.97+; English form is filtered.
+# See https://github.com/rust-lang/rust/issues/159133
+[lints.rust]
+linker_messages = "allow"
+
 [profile.dev]
 incremental = true # Compile your binary in smaller steps.
 
