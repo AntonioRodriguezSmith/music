@@ -20,7 +20,7 @@
 
 1. **Opener ACL:** carpetas fuera de Music/Downloads/Documents y no en D:/E: fallarán al abrir; ampliar `capabilities/default.json` si hace falta — no volver a `**` global sin revisión.
 2. **CSP:** `script-src 'self'` puede romper algún edge case de carga; si la app en blanco tras `tauri build`, documentar y reañadir `'unsafe-inline'` solo en script si es imprescindible.
-3. **Resume = re-download:** no reanuda bytes; suficiente para Fase 2.
+3. **Resume = re-download:** no reanuda bytes; suficiente para Fase 2. Post-cierre: fallos de reintento ya no vacían el snapshot en silencio (banner + filas restantes).
 4. **Playwright:** no cubre IPC Tauri; el smoke real sigue siendo `npm run tauri -- dev` / `smoke:windows` / acceso directo splash.
 5. **Firma:** unsigned por defecto hasta certificado.
 6. **Portable:** no hay ZIP portable en Fase 2 (solo MSI/NSIS + `.exe` release).

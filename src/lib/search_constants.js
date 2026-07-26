@@ -40,21 +40,3 @@ export function shouldRecalcPageSize({ locked, isNewSearch = false }) {
   if (isNewSearch) return false;
   return !locked;
 }
-
-/**
- * @deprecated prefer {@link pageSizeForListHeight}
- * @returns {{ pageSize: number, paginationPx: number }}
- */
-export function layoutForSearchHeight(heightPx, rowHeightPx = SEARCH_ROW_HEIGHT_PX) {
-  return {
-    pageSize: pageSizeForListHeight(heightPx, rowHeightPx),
-    paginationPx: SEARCH_PAGINATION_HEIGHT_PX,
-  };
-}
-
-/**
- * @deprecated prefer {@link pageSizeForListHeight}
- */
-export function pageSizeForHeight(heightPx, rowHeightPx = SEARCH_ROW_HEIGHT_PX) {
-  return pageSizeForListHeight(heightPx, rowHeightPx);
-}

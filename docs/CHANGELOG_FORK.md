@@ -2,6 +2,15 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-07 — Audit cleanup (launcher / FE / Rust)
+
+- **Launcher:** splash starts `dev-windows.ps1` via detached System32 PowerShell; fail-fast if entry script missing, child exits ≠0, or no `clip_harbour` window ~45s after clean exit — [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
+- **Bulk vs single:** opening one search result clears multi-select so download is not forced into bulk (`shouldTreatAsBulk`).
+- **Checkbox:** controlled `checked` on the hidden input.
+- **Resume:** failed retries keep remaining snapshot rows and show `sidebar.resumeFailed`; successes are dropped from the banner.
+- **Rust:** process registry recovers poisoned locks (stop can kill); download paths use `Path::join`; missing cookies file errors early; ffmpeg conversion errors include truncated stderr.
+- **Cleanup:** orphan i18n keys + deprecated search page-size helpers removed.
+
 ## 2026-07 — Cargo check optimize (CI + local)
 
 - **CI:** `Swatinem/rust-cache@v2` on `check-windows` + `dorny/paths-filter` so `cargo check` runs only when `src-tauri/**` changes; Windows smoke always runs.
