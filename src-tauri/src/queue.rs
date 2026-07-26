@@ -1,16 +1,47 @@
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
+use std::sync::{MutexGuard, PoisonError};
 
 use tauri::Emitter;
-use tauri_plugin_shell::process::CommandEvent;
+use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use tokio::time::{sleep, Duration};
 
 use crate::models::{Download, DownloadConfig};
-use crate::state::{app_state, MAX_PARALLEL_DOWNLOADS, PROCESS_COUNTER};
+use crate::state::{app_state, AppState, MAX_PARALLEL_DOWNLOADS, PROCESS_COUNTER};
 use crate::ytdlp::{
     download_has_cookies, format_ytdlp_error, is_auth_block_error, parse_config,
 };
+
+fn lock_process_registry(
+    state: &AppState,
+) -> MutexGuard<'_, HashMap<usize, CommandChild>> {
+    state
+        .process_registry
+        .lock()
+        .unwrap_or_else(|poisoned: PoisonError<MutexGuard<'_, HashMap<usize, CommandChild>>>| {
+            eprintln!("process_registry lock poisoned; recovering");
+            poisoned.into_inner()
+        })
+}
+
+fn truncate_cli_detail(raw: &str, max: usize) -> String {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    let flat: String = trimmed
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .collect::<Vec<_>>()
+        .join(" | ");
+    if flat.len() > max {
+        format!("{}…", &flat[..max])
+    } else {
+        flat
+    }
+}
 
 fn clamp_pct(value: f64) -> f64 {
     value.max(0.0).min(100.0)
@@ -62,7 +93,7 @@ fn merge_ytdlp_progress(entry: &mut Download, incoming: Download, will_convert: 
 }
 
 fn resolve_download_path(filename: &str, output_dir: Option<&str>) -> String {
-    use std::path::{Path, MAIN_SEPARATOR};
+    use std::path::{Path, PathBuf};
 
     let path = Path::new(filename);
     if path.is_absolute() {
@@ -72,8 +103,10 @@ fn resolve_download_path(filename: &str, output_dir: Option<&str>) -> String {
         return filename.to_string();
     }
     if let Some(dir) = output_dir.filter(|d| !d.is_empty()) {
-        let trimmed = dir.trim_end_matches(MAIN_SEPARATOR).trim_end_matches('/');
-        return format!("{trimmed}{MAIN_SEPARATOR}{filename}");
+        return PathBuf::from(dir)
+            .join(filename)
+            .to_string_lossy()
+            .into_owned();
     }
     filename.to_string()
 }
@@ -219,7 +252,7 @@ async fn run_ytdlp_attempt(
     config: &DownloadConfig,
 ) -> Result<(), String> {
     let state = app_state(app);
-    let args = parse_config(config.clone());
+    let args = parse_config(config.clone())?;
     #[cfg(debug_assertions)]
     eprintln!("yt-dlp args: {args:?}");
 
@@ -237,9 +270,7 @@ async fn run_ytdlp_attempt(
         }
     };
 
-    if let Ok(mut handle_registry) = state.process_registry.lock() {
-        handle_registry.insert(process_id, child);
-    }
+    lock_process_registry(&state).insert(process_id, child);
 
     {
         let mut download_registry = state.download_registry.lock().await;
@@ -328,9 +359,7 @@ async fn run_ytdlp_attempt(
         }
     }
 
-    if let Ok(mut process_registry) = state.process_registry.lock() {
-        process_registry.remove(&process_id);
-    }
+    lock_process_registry(&state).remove(&process_id);
 
     let status = {
         let download_registry = state.download_registry.lock().await;
@@ -554,9 +583,7 @@ async fn convert_video(
         }
     };
 
-    if let Ok(mut process_registry) = state.process_registry.lock() {
-        process_registry.insert(process_id, child);
-    }
+    lock_process_registry(&state).insert(process_id, child);
 
     let snapshot = {
         let mut download_registry = state.download_registry.lock().await;
@@ -571,6 +598,7 @@ async fn convert_video(
 
     let mut conversion_ok = false;
     let mut cancelled = false;
+    let mut ffmpeg_stderr = String::new();
 
     while let Some(event) = rx.recv().await {
         match event {
@@ -617,6 +645,13 @@ async fn convert_video(
                     conversion_ok = true;
                 }
             }
+            CommandEvent::Stderr(line_bytes) => {
+                let log = String::from_utf8_lossy(&line_bytes);
+                ffmpeg_stderr.push_str(&log);
+                if ffmpeg_stderr.len() > 4000 {
+                    ffmpeg_stderr = ffmpeg_stderr[ffmpeg_stderr.len() - 3000..].to_string();
+                }
+            }
             CommandEvent::Terminated(payload) => {
                 if payload.code.unwrap_or(-1) == 0 {
                     conversion_ok = true;
@@ -626,9 +661,7 @@ async fn convert_video(
         }
     }
 
-    if let Ok(mut process_registry) = state.process_registry.lock() {
-        process_registry.remove(&process_id);
-    }
+    lock_process_registry(&state).remove(&process_id);
 
     if cancelled {
         return;
@@ -665,6 +698,12 @@ async fn convert_video(
         let _ = app.emit("status", snapshot);
         println!("ffmpeg conversion completed: {}", output_path);
     } else {
+        let detail = truncate_cli_detail(&ffmpeg_stderr, 280);
+        let status = if detail.is_empty() {
+            "error:conversion".to_string()
+        } else {
+            format!("error:conversion: {detail}")
+        };
         let snapshot = {
             let mut download_registry = state.download_registry.lock().await;
             if let Some(entry) = download_registry.get_mut(&process_id) {
@@ -672,14 +711,14 @@ async fn convert_video(
                     return;
                 }
                 entry.title = title.clone();
-                entry.status = "error:conversion".to_string();
+                entry.status = status;
             }
             download_registry.clone()
         };
         let _ = app.emit("status", snapshot);
         eprintln!(
-            "ffmpeg conversion failed (ok={}, valid={}): {}",
-            conversion_ok, output_valid, output_path
+            "ffmpeg conversion failed (ok={}, valid={}): {} — {}",
+            conversion_ok, output_valid, output_path, detail
         );
     }
 }
@@ -693,11 +732,9 @@ pub async fn stop_download(app: tauri::AppHandle, id: usize) {
         pending.retain(|(pid, _)| *pid != id);
     }
 
-    if let Ok(mut process_registry) = state.process_registry.lock() {
-        if let Some(handle) = process_registry.remove(&id) {
-            if let Err(e) = handle.kill() {
-                eprintln!("failed to kill process {id}: {e}");
-            }
+    if let Some(handle) = lock_process_registry(&state).remove(&id) {
+        if let Err(e) = handle.kill() {
+            eprintln!("failed to kill process {id}: {e}");
         }
     }
 
@@ -741,10 +778,7 @@ pub async fn pause_download(app: tauri::AppHandle, id: usize) -> Result<(), Stri
         use nix::unistd::Pid;
 
         let state = app_state(&app);
-        let process_registry = state
-            .process_registry
-            .lock()
-            .map_err(|_| "process registry lock poisoned".to_string())?;
+        let process_registry = lock_process_registry(&state);
 
         let handle = process_registry
             .get(&id)
@@ -777,10 +811,7 @@ pub async fn resume_download(app: tauri::AppHandle, id: usize) -> Result<(), Str
         use nix::unistd::Pid;
 
         let state = app_state(&app);
-        let process_registry = state
-            .process_registry
-            .lock()
-            .map_err(|_| "process registry lock poisoned".to_string())?;
+        let process_registry = lock_process_registry(&state);
 
         let handle = process_registry
             .get(&id)

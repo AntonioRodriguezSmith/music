@@ -80,7 +80,7 @@ pub fn append_cookie_args(
     args: &mut Vec<String>,
     cookies_file: Option<&str>,
     cookies_from_browser: Option<&str>,
-) {
+) -> Result<(), String> {
     let file = cookies_file
         .map(str::trim)
         .filter(|s| !s.is_empty())
@@ -96,6 +96,9 @@ pub fn append_cookie_args(
         .filter(|s| !s.trim().is_empty());
 
     if let Some(path) = file {
+        if !std::path::Path::new(&path).is_file() {
+            return Err(format!("Cookies file not found: {path}"));
+        }
         args.push("--cookies".to_string());
         args.push(path);
     }
@@ -103,6 +106,7 @@ pub fn append_cookie_args(
         args.push("--cookies-from-browser".to_string());
         args.push(browser);
     }
+    Ok(())
 }
 
 fn first_error_line(stderr: &str) -> Option<&str> {
@@ -152,7 +156,7 @@ Exporta cookies YouTube (cookies.txt) y configúralas en la sidebar. Ver docs/PH
     }
 }
 
-pub fn parse_config(config: DownloadConfig) -> Vec<String> {
+pub fn parse_config(config: DownloadConfig) -> Result<Vec<String>, String> {
     let mut args = vec![
         config.url.clone(),
         "--newline".to_string(),
@@ -166,7 +170,7 @@ pub fn parse_config(config: DownloadConfig) -> Vec<String> {
         &mut args,
         config.cookies_file.as_deref(),
         config.cookies_from_browser.as_deref(),
-    );
+    )?;
 
     if let Some(ffmpeg) = ffmpeg_location() {
         args.push("--ffmpeg-location".to_string());
@@ -203,7 +207,7 @@ pub fn parse_config(config: DownloadConfig) -> Vec<String> {
         args.push("--embed-thumbnail".to_string());
     }
 
-    args
+    Ok(args)
 }
 
 pub fn download_has_cookies(config: &DownloadConfig) -> bool {
@@ -295,7 +299,7 @@ pub async fn get_top_search(
         &mut args,
         cookies_file.as_deref(),
         cookies_from_browser.as_deref(),
-    );
+    )?;
     let sidecar_command = app
         .shell()
         .sidecar("yt-dlp")
@@ -433,7 +437,7 @@ pub async fn get_url_details(
         &mut args,
         cookies_file.as_deref(),
         cookies_from_browser.as_deref(),
-    );
+    )?;
     let sidecar_command = app
         .shell()
         .sidecar("yt-dlp")
