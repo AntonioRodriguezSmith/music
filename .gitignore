@@ -31,6 +31,8 @@ cookies.txt
 cookies*.txt
 **/cookies*.txt
 *.cookies.txt
+*.bak.txt
+cookies_*.bak.txt
 !docs/cookies/cookies.txt.example
 
 # Signing / certs (optional Authenticode)
@@ -53,6 +55,10 @@ src-tauri/.cargo/config.toml
 # Unrelated local trees (not part of Clip Harbour)
 web/
 backup-duplicados/
+
+# Proton Drive / sync junk
+* (Conflicted copy)*
+*.tmp
 
 # OS / editor
 .vscode/*

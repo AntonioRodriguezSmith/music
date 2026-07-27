@@ -1,8 +1,8 @@
 # Fase 1 — resumen (cerrada)
 
 **Estado:** CERRADA (2026-07-21)  
-**Informe de auditoría:** [PHASE1_AUDIT.md](./PHASE1_AUDIT.md)  
-**Checklist:** [PHASE1_CHECKLIST.md](./PHASE1_CHECKLIST.md)  
+**Informe de auditoría:** [archive/PHASE1_AUDIT.md](./archive/PHASE1_AUDIT.md)  
+**Checklist:** [archive/PHASE1_CHECKLIST.md](./archive/PHASE1_CHECKLIST.md)  
 **Changelog del fork:** [CHANGELOG_FORK.md](./CHANGELOG_FORK.md)
 
 ## Qué incluye esta fase
@@ -75,10 +75,10 @@ npm run tauri -- build
 - Firma de código del instalador
 - Endurecer ACL `opener` y CSP
 
-Detalle en [PHASE1_AUDIT.md](./PHASE1_AUDIT.md#phase-2-backlog).
+Detalle en [archive/PHASE1_AUDIT.md](./archive/PHASE1_AUDIT.md#phase-2-backlog).
 
 ## Enlaces rápidos
 
-- Desarrollo Windows: [cookies/WINDOWS.md](./cookies/WINDOWS.md)
+- Desarrollo Windows: [WINDOWS.md](./WINDOWS.md)
 - Cookies YouTube: [cookies/cookies_info.md](./cookies/cookies_info.md)
 - Problemas frecuentes: [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)

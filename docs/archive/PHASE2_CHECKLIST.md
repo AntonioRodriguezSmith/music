@@ -39,4 +39,4 @@ Use the **native Tauri window** (`npm run tauri -- dev`, `npm run dev:windows`, 
 ## M5 Docs
 
 - [x] PHASE2.md / SETUP / AUDIT / CHECKLIST / CHANGELOG / README / TROUBLESHOOTING actualizados
-- [x] Smoke manual cerrado (cookies + descarga + open file + resume) — ver [PHASE2_AUDIT.md](./PHASE2_AUDIT.md)
+- [x] Smoke manual cerrado (cookies + descarga + open file + resume) — ver [PHASE2_AUDIT.md](./PHASE2_AUDIT.md) (revalidado 2026-07-27)

@@ -37,16 +37,3 @@ export function formatCount(n, locale = "es") {
     return String(n);
   }
 }
-
-/**
- * @param {string | null | undefined} text
- * @param {number} [max]
- * @returns {string | null}
- */
-export function truncateDescription(text, max = 160) {
-  if (!text) return null;
-  const cleaned = String(text).replace(/\s+/g, " ").trim();
-  if (!cleaned) return null;
-  if (cleaned.length <= max) return cleaned;
-  return `${cleaned.slice(0, max - 1)}…`;
-}

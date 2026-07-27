@@ -11,7 +11,7 @@ Clip Harbour es una interfaz gráfica multiplataforma, sencilla y completa, para
 
 Mira el [vídeo de demostración](https://www.youtube.com/watch?v=VYv4jSYCPak).
 
-> **Windows:** las releases oficiales de GitHub del proyecto original son solo Linux. Este árbol incluye soporte para compilar y ejecutar en Windows — ver [docs/cookies/WINDOWS.md](docs/cookies/WINDOWS.md).
+> **Windows:** las releases oficiales de GitHub del proyecto original son solo Linux. Este árbol incluye soporte para compilar y ejecutar en Windows — ver [docs/WINDOWS.md](docs/WINDOWS.md).
 
 # Índice
 
@@ -111,7 +111,7 @@ Usa la documentación de **[Tauri 2](https://v2.tauri.app/)**, no la de [Tauri 1
 
 ## Desarrollo en Windows
 
-Notas y changelog: **[docs/cookies/WINDOWS.md](docs/cookies/WINDOWS.md)**.
+Notas y changelog: **[docs/WINDOWS.md](docs/WINDOWS.md)**. Fase 3: **[docs/PHASE3.md](docs/PHASE3.md)**.
 
 ```powershell
 npm install
@@ -122,9 +122,8 @@ npm run smoke:windows        # sidecars --version + tests unitarios
 # opcional: copiar .env.example → .env y definir VITE_DEFAULT_DOWNLOAD_PATH
 # cookies: ver docs/PHASE2_SETUP.md
 npm run dev:windows
-npm run launch:windows       # splash Escritorio (sin consola); docs/LAUNCHER_WINDOWS.md
-# instaladores de release (MSI + NSIS):
-npm run tauri -- build
+npm run launch:windows       # splash Escritorio; prefer .exe release (sin Cursor)
+npm run tauri -- build       # .exe standalone + MSI/NSIS en %LOCALAPPDATA%\clip_harbour-target\release\
 # Authenticode opcional (hace skip si no hay cert en el entorno):
 npm run sign:windows
 ```

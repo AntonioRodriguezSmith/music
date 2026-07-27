@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
-import {
-  clearBrowserCookiePref,
-  loadCookiePrefs,
-  saveCookiePrefs,
-} from "../../lib/cookies_prefs";
+import { loadCookiePrefs, saveCookiePrefs } from "../../lib/cookies_prefs";
 import { isTauri } from "../../lib/tauri_env";
 
 export default function CookiesSettings() {
@@ -16,12 +12,8 @@ export default function CookiesSettings() {
   const [ytdlpVersion, setYtdlpVersion] = useState("");
 
   useEffect(() => {
-    // Drop legacy "from browser" selection so yt-dlp never gets both flags.
-    clearBrowserCookiePref();
-    const prefs = loadCookiePrefs();
-    if (prefs.cookiesFile) {
-      saveCookiePrefs({ cookiesFromBrowser: "", cookiesFile: prefs.cookiesFile });
-    }
+    // Ensure legacy browser key is cleared (file-only prefs).
+    loadCookiePrefs();
   }, []);
 
   useEffect(() => {
@@ -38,7 +30,7 @@ export default function CookiesSettings() {
   }, [openPanel, ytdlpVersion]);
 
   function persistFile(nextFile) {
-    saveCookiePrefs({ cookiesFromBrowser: "", cookiesFile: nextFile });
+    saveCookiePrefs({ cookiesFile: nextFile });
   }
 
   async function pickCookiesFile() {

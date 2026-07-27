@@ -12,13 +12,13 @@ Docs for this stack: [Tauri 2](https://v2.tauri.app/) (not [Tauri 1](https://v1.
 4. Optional: copy `.env.example` → `.env` and set `VITE_DEFAULT_DOWNLOAD_PATH`.
 5. `npm run test` then `npm run smoke:windows`
 6. `npm run dev:windows` (or `.\dev-windows.ps1`)
-7. **Optional polished launch:** desktop shortcut **Clip Harbour** → splash (large icon + progress, no console). Docs: [LAUNCHER_WINDOWS.md](../LAUNCHER_WINDOWS.md). Assets: `assets/clip-harbour-app-icon.{png,ico}`; scripts: `scripts/launch-clip-harbour.{vbs,ps1}`.
+7. **Optional polished launch:** desktop shortcut **Clip Harbour** → splash (large icon + progress, no console). Docs: [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md). Assets: `assets/clip-harbour-app-icon.{png,ico}`; scripts: `scripts/launch-clip-harbour.{vbs,ps1}`.
 
 Use the **native Clip Harbour window**. The Vite URL on port `1420` is only the web frontend; `invoke` / sidecars will not work in a normal browser.
 
 ## Phase 1 status
 
-**Closed** (2026-07-21). Summary: [PHASE1.md](../PHASE1.md). Audit: [PHASE1_AUDIT.md](../PHASE1_AUDIT.md).
+**Closed** (2026-07-21). Summary: [PHASE1.md](./PHASE1.md). Audit: [archive/PHASE1_AUDIT.md](./archive/PHASE1_AUDIT.md).
 
 ## Release build (Windows installers)
 
@@ -93,7 +93,7 @@ There is **no portable ZIP** package in Fase 1/2 — only MSI, NSIS setup, and t
 | `.vscode/settings.json` | Prepends `.cargo\bin` to integrated terminal PATH. |
 | `scripts/fetch-windows-sidecars.ps1` | Fetches Windows `yt-dlp.exe` + `ffmpeg.exe` with correct sidecar filenames. |
 | `scripts/smoke-windows.ps1` | Smoke: sidecar presence/`--version` + `vitest`. |
-| `scripts/launch-clip-harbour.vbs` / `.ps1` | Silent splash launcher (no console); see [LAUNCHER_WINDOWS.md](../LAUNCHER_WINDOWS.md). |
+| `scripts/launch-clip-harbour.vbs` / `.ps1` | Silent splash launcher (no console); see [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md). |
 | `assets/clip-harbour-app-icon.png` / `.ico` | Splash + desktop shortcut icon. |
 | `src/lib/format_details.js` | Shared format labels, key-data rows, audio/video codec display helpers. |
 | `src/lib/*.test.js` | Unit tests for URL resolve, download path, status helpers. |
@@ -123,13 +123,13 @@ There is **no portable ZIP** package in Fase 1/2 — only MSI, NSIS setup, and t
 | Symptom | Check |
 |---------|--------|
 | `failed to get cargo metadata: program not found` | Terminal sin `%USERPROFILE%\.cargo\bin`. Usa `npm run tauri -- dev` (wrapper) o `npm run dev:windows`. Abre una **nueva** terminal tras el cambio de `.vscode/settings.json`. |
-| YouTube “Sign in to confirm you’re not a bot” | Sidebar → **Elegir cookies.txt** (Método A / Netscape). Ver [PHASE2_SETUP.md](../PHASE2_SETUP.md) y [cookies_info.md](./cookies_info.md). Actualiza yt-dlp: `npm run fetch:sidecars:windows`. |
+| YouTube “Sign in to confirm you’re not a bot” | Sidebar → **Elegir cookies.txt** (Método A / Netscape). Ver [PHASE2_SETUP.md](./PHASE2_SETUP.md) y [cookies_info.md](./cookies/cookies_info.md). Actualiza yt-dlp: `npm run fetch:sidecars:windows`. |
 | Stuck on Fetching… / invoke “does nothing” | Are you in the **desktop** window, not the browser? Open DevTools (Ctrl+Shift+I) there. |
 | Sidecar / yt-dlp errors | Re-run `npm run fetch:sidecars:windows`; confirm files exist under `src-tauri/binaries/`. |
 | MSVC / `winapifamily.h` missing | Install full Windows SDK; `setup-windows-env.ps1` prepends system SDK includes. |
 | Port 1420 in use | Kill leftover `node` / Vite processes, then restart the launcher. |
 | Slow or locked builds on Proton Drive | `CARGO_TARGET_DIR` is set to `%LOCALAPPDATA%\clip_harbour-target`. |
-| CI Windows lento / cargo check skipped | Primera vez tras lockfile = cold cache. `cargo check` se salta si no cambia `src-tauri/**`. Local: `npm run check:rust` / `check:rust:bg`. Ver [TROUBLESHOOTING.md](../TROUBLESHOOTING.md). |
+| CI Windows lento / cargo check skipped | Primera vez tras lockfile = cold cache. `cargo check` se salta si no cambia `src-tauri/**`. Local: `npm run check:rust` / `check:rust:bg`. Ver [TROUBLESHOOTING.md](./TROUBLESHOOTING.md). |
 | Cannot drag / minimize / close window | Frameless mode needs `core:window:allow-start-dragging` (and min/max/close) in `capabilities/default.json`. |
 | UI clipped / format list hard to use | Format panel scrolls inside each page; use Anterior/Siguiente for pages beyond 12 formats. Search rows/page stay fixed after first measure (list scrolls if the window is shorter). Window ≥ `minWidth`/`minHeight` (1024×640). |
 | Preview always shows first search hit | Fixed: preview index no longer resets on every `search-update` while streaming; only on new search or page change. |

@@ -2,6 +2,11 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-07 — Phase 2 closeout (standalone launcher)
+
+- **Launcher:** desktop splash prefers `%LOCALAPPDATA%\clip_harbour-target\release\clip_harbour.exe` (no Cursor/Vite); stale debug without Vite is restarted — [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
+- **Docs:** `docs/WINDOWS.md` (moved from `cookies/`); Phase 1–2 audits/checklists under [archive/](./archive/); cookies prefs file-only cleanup.
+
 ## 2026-07 — Audit cleanup (launcher / FE / Rust)
 
 - **Launcher:** splash starts `dev-windows.ps1` via detached System32 PowerShell; fail-fast if entry script missing, child exits ≠0, or no `clip_harbour` window ~45s after clean exit — [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
@@ -20,7 +25,7 @@ Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
 ## 2026-07 — Phase 2
 
-- **Summary:** [PHASE2.md](./PHASE2.md) · setup [PHASE2_SETUP.md](./PHASE2_SETUP.md) · audit [PHASE2_AUDIT.md](./PHASE2_AUDIT.md) · checklist [PHASE2_CHECKLIST.md](./PHASE2_CHECKLIST.md).
+- **Summary:** [PHASE2.md](./PHASE2.md) · setup [PHASE2_SETUP.md](./PHASE2_SETUP.md) · audit [archive/PHASE2_AUDIT.md](./archive/PHASE2_AUDIT.md) · checklist [archive/PHASE2_CHECKLIST.md](./archive/PHASE2_CHECKLIST.md).
 - **Status:** closed 2026-07-25 — smoke manual OK (cookies Method A, download, open file, resume banner → Reintentar).
 - **Cookies:** sidebar file-only (Método A); `cookieInvokeArgs` never sends browser flag when a file is set.
 - **Queue:** `start_download` returns `process_id`; FE snapshot + resume banner (re-download).
@@ -36,8 +41,8 @@ Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 ## 2026-07 — Phase 1 closeout
 
 - **Summary:** [PHASE1.md](./PHASE1.md) — what shipped, how to build installers, Phase 2 backlog.
-- **Audit:** [PHASE1_AUDIT.md](./PHASE1_AUDIT.md) — verdict **Fase 1 CERRADA**.
-- **Checklist:** [PHASE1_CHECKLIST.md](./PHASE1_CHECKLIST.md).
+- **Audit:** [archive/PHASE1_AUDIT.md](./archive/PHASE1_AUDIT.md) — verdict **Fase 1 CERRADA**.
+- **Checklist:** [archive/PHASE1_CHECKLIST.md](./archive/PHASE1_CHECKLIST.md).
 - Closeout evidence: USB BMW → M4A on device; open folder OK; `npm run tauri -- build` produced MSI + NSIS.
 - Added Vitest coverage for `build_download_payload`, `download_history`, `cookies_prefs`.
 - Docs: `transparent: true` aligned with `tauri.conf.json` (rounded shell).
@@ -98,7 +103,7 @@ Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
 ### Security / docs (M3–M4)
 - CSP set; capabilities `windows: ["main"]`; `withGlobalTauri: false`.
-- See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) and [cookies/WINDOWS.md](./cookies/WINDOWS.md).
+- See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) and [WINDOWS.md](./WINDOWS.md).
 
 ### Deferred → Phase 2 (delivered — see Phase 2 section above)
 - Session queue persistence across app restarts.

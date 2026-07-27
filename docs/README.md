@@ -1,30 +1,23 @@
 # Documentación
 
-Notas del fork y guías operativas:
+Índice del fork (sin duplicar el README raíz):
 
-- [PHASE2.md](./PHASE2.md) — **resumen Fase 2 (cerrada)**: cola, cookies Método A, CI, seguridad
+## Fases
+
+- [PHASE3.md](./PHASE3.md) — Fase 3 (en curso): distribución, portable, firma, auto-update, UX
+- [PHASE2.md](./PHASE2.md) — Fase 2 (cerrada): cola, cookies Método A, CI, seguridad
 - [PHASE2_SETUP.md](./PHASE2_SETUP.md) — setup local (`.env` + cookies.txt)
-- [PHASE2_AUDIT.md](./PHASE2_AUDIT.md) — auditoría Fase 2 + evidencia smoke 2026-07-25
-- [PHASE2_CHECKLIST.md](./PHASE2_CHECKLIST.md) — checklist Fase 2
-- [PHASE1.md](./PHASE1.md) — resumen Fase 1 (cerrada)
-- [PHASE1_AUDIT.md](./PHASE1_AUDIT.md) — informe de auditoría Fase 1
-- [PHASE1_CHECKLIST.md](./PHASE1_CHECKLIST.md) — checklist Fase 1
-- [CHANGELOG_FORK.md](./CHANGELOG_FORK.md) — cambios del fork (búsqueda, cola, Windows)
+- [PHASE1.md](./PHASE1.md) — Fase 1 (cerrada)
+- [archive/](./archive/) — auditorías y checklists Fase 1–2
+
+## Operación
+
+- [WINDOWS.md](./WINDOWS.md) — desarrollo y build release en Windows
+- [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md) — splash + acceso directo Escritorio
 - [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — problemas frecuentes
-- [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md) — splash + acceso directo Escritorio (sin consola)
-- [cookies/WINDOWS.md](./cookies/WINDOWS.md) — desarrollo y **build release** en Windows
-- [cookies/cookies_info.md](./cookies/cookies_info.md) — guía de cookies YouTube para yt-dlp
-- [cookies/cookies.txt.example](./cookies/cookies.txt.example) — plantilla Netscape (sin cookies reales)
+- [CHANGELOG_FORK.md](./CHANGELOG_FORK.md) — cambios del fork
 
-## Interfaz (resumen reciente)
+## Cookies
 
-- **Búsqueda:** batch `ytsearch50` (+ “Cargar 50 más” → hasta 100, dedupe); filas por página medidas **una vez** al mostrar resultados (8–30) y **congeladas** al redimensionar; paginación fija abajo. Nueva búsqueda cancela la anterior.
-- **Vista previa:** miniatura + metadatos; tras ~400 ms se enriquece con `get_url_details` (cache en memoria). No es “Embed metadata” del archivo.
-- **Cookies:** solo archivo `cookies.txt` en la sidebar (Método A).
-- **Cola:** snapshot entre reinicios + banner reanudar; Historial puede abrir el fichero.
-- **Formatos:** audio primero, vídeo después; 12 por página con scroll interno y paginación Anterior/Siguiente.
-- **Datos clave:** campos traducidos (códec, bitrate, frecuencia, resolución, tamaño) vía `src/lib/format_details.js`.
-- **Modos:** Standard / USB BMW / PC; por defecto se elige el mejor audio; USB BMW convierte a M4A y borra el `.webm` fuente.
-- **Lanzador Windows:** acceso directo Escritorio con splash (icono CH + barra de progreso); ver [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
-
-Detalle técnico en [CHANGELOG_FORK.md](./CHANGELOG_FORK.md) y la tabla *Frontend* de [cookies/WINDOWS.md](./cookies/WINDOWS.md).
+- [cookies/cookies_info.md](./cookies/cookies_info.md) — guía YouTube / yt-dlp
+- [cookies/cookies.txt.example](./cookies/cookies.txt.example) — plantilla Netscape

@@ -2,7 +2,7 @@
 
 Producto, fiabilidad, ingeniería y release del fork Windows tras el cierre de Fase 1.
 
-**Estado:** cerrada (código + docs + smoke manual 2026-07-25). Veredicto en [PHASE2_AUDIT.md](./PHASE2_AUDIT.md).
+**Estado:** cerrada (código + docs + smoke 2026-07-25; lanzador standalone 2026-07-27). Veredicto en [archive/PHASE2_AUDIT.md](./archive/PHASE2_AUDIT.md).
 
 ## Qué se entregó
 
@@ -37,7 +37,7 @@ npm run check:rust        # cargo check con MSVC + log en %TEMP%\clip-harbour-ca
 `rust-analyzer` ya diagnostica en el IDE; `check:rust` es el gate explícito (CI-like). ~500 crates transitivas de Tauri son normales — la optimización es caché/skip, no podar el árbol.
 
 CI: [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (Vitest + Playwright en Ubuntu; en Windows: smoke siempre + `cargo check` solo si cambia `src-tauri/**`, con `Swatinem/rust-cache`).  
-Release unsigned: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (`workflow_dispatch`, misma rust-cache). En CI fija `CARGO_TARGET_DIR` a `src-tauri/target` para que los artefactos coincidan con `upload-artifact`. En local los instaladores salen bajo `%LOCALAPPDATA%\clip_harbour-target` (ver [cookies/WINDOWS.md](./cookies/WINDOWS.md)). No hay paquete portable ZIP en Fase 2.
+Release unsigned: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (`workflow_dispatch`, misma rust-cache). En CI fija `CARGO_TARGET_DIR` a `src-tauri/target` para que los artefactos coincidan con `upload-artifact`. En local los instaladores salen bajo `%LOCALAPPDATA%\clip_harbour-target` (ver [WINDOWS.md](./WINDOWS.md)). Portable ZIP y auto-update → [PHASE3.md](./PHASE3.md).
 
 ## Firma de instalador
 
@@ -52,5 +52,9 @@ Ver [scripts/sign-windows.ps1](../scripts/sign-windows.ps1). Alternativa: Azure 
 
 ## Auditoría
 
-- [PHASE2_AUDIT.md](./PHASE2_AUDIT.md)
-- [PHASE2_CHECKLIST.md](./PHASE2_CHECKLIST.md)
+- [archive/PHASE2_AUDIT.md](./archive/PHASE2_AUDIT.md)
+- [archive/PHASE2_CHECKLIST.md](./archive/PHASE2_CHECKLIST.md)
+
+## Post-cierre (2026-07-27)
+
+- Acceso directo / splash prefer **release** `.exe` (sin Cursor/Vite); ver [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
