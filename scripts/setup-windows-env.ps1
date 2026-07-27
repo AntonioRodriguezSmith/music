@@ -8,10 +8,26 @@ if (-not (Test-Path (Join-Path $cargoBin "cargo.exe"))) {
     Write-Error "cargo.exe not found in $cargoBin. Install Rust from https://rustup.rs and reopen the terminal."
 }
 
-# Prepend cargo; rebuild PATH from Machine+User so IDE terminals without rustup still work
+# Prepend cargo; rebuild PATH from Machine+User so Explorer / desktop shortcuts
+# (and IDE terminals without rustup) still find cargo + node without Cursor open.
 $machinePath = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
 $userPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
 $env:Path = "$cargoBin;$machinePath;$userPath"
+
+# Node is required for tauri/vite; ensure common install dirs even if User PATH is stale.
+$nodeCandidates = @(
+    "C:\Program Files\nodejs",
+    (Join-Path $env:LOCALAPPDATA "Programs\nodejs")
+)
+foreach ($nodeDir in $nodeCandidates) {
+    if ($nodeDir -and (Test-Path (Join-Path $nodeDir "node.exe"))) {
+        $env:Path = "$nodeDir;$env:Path"
+        break
+    }
+}
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    Write-Error "node.exe not found on PATH. Install Node.js LTS from https://nodejs.org and reopen the terminal."
+}
 
 if (-not $env:CARGO_HOME) {
     $env:CARGO_HOME = Join-Path $env:USERPROFILE ".cargo"
@@ -19,7 +35,9 @@ if (-not $env:CARGO_HOME) {
 if (-not $env:RUSTUP_HOME) {
     $env:RUSTUP_HOME = Join-Path $env:USERPROFILE ".rustup"
 }
-if (-not $env:CARGO_TARGET_DIR) {
+# Prefer LocalAppData; ignore Cursor agent sandbox targets so desktop/release
+# builds land where the launcher expects them.
+if (-not $env:CARGO_TARGET_DIR -or $env:CARGO_TARGET_DIR -match 'cursor-sandbox') {
     $env:CARGO_TARGET_DIR = Join-Path $env:LOCALAPPDATA "clip_harbour-target"
 }
 

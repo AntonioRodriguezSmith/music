@@ -2,6 +2,9 @@
 <#
 .SYNOPSIS
   Launch Clip Harbour with a centered splash (large icon + progress), no console window.
+
+  Prefers a standalone release .exe (no Cursor / Vite). Falls back to tauri dev.
+  Set CLIP_HARBOUR_FORCE_DEV=1 to always use tauri dev.
 #>
 $ErrorActionPreference = "Stop"
 
@@ -24,7 +27,9 @@ $root = Split-Path $PSScriptRoot -Parent
 $iconPng = Join-Path $root "assets\clip-harbour-app-icon.png"
 $iconIco = Join-Path $root "assets\clip-harbour-app-icon.ico"
 $logFile = Join-Path $env:TEMP "clip-harbour-launch.log"
+$devLogFile = Join-Path $env:TEMP "clip-harbour-dev.log"
 $devScript = Join-Path $root "dev-windows.ps1"
+$forceDev = ($env:CLIP_HARBOUR_FORCE_DEV -eq "1")
 
 function Write-LaunchLog([string]$text) {
   try {
@@ -33,9 +38,43 @@ function Write-LaunchLog([string]$text) {
   } catch { }
 }
 
+function Test-ViteReady {
+  try {
+    $req = [System.Net.HttpWebRequest]::Create("http://127.0.0.1:1420/")
+    $req.Method = "GET"
+    $req.Timeout = 800
+    $req.ReadWriteTimeout = 800
+    $resp = $req.GetResponse()
+    $resp.Close()
+    return $true
+  } catch {
+    return $false
+  }
+}
+
+function Get-StandaloneReleaseExe {
+  $candidates = @(
+    (Join-Path $env:LOCALAPPDATA "clip_harbour-target\release\clip_harbour.exe"),
+    (Join-Path $root "src-tauri\target\release\clip_harbour.exe")
+  )
+  foreach ($c in $candidates) {
+    if ($c -and (Test-Path -LiteralPath $c)) { return $c }
+  }
+  return $null
+}
+
+function Test-IsReleasePath([string]$path) {
+  if (-not $path) { return $false }
+  return ($path -like "*\release\clip_harbour.exe")
+}
+
+function Test-IsDebugPath([string]$path) {
+  if (-not $path) { return $false }
+  return ($path -like "*\debug\clip_harbour.exe")
+}
+
 function Get-ClipHarbourProcess {
-  # Exact name only — never match InterLocu / other node apps.
-  # Path may be empty under some ACLs; prefer path match when available.
+  # Exact name only - never match InterLocu / other node apps.
   Get-Process -Name "clip_harbour" -ErrorAction SilentlyContinue |
     Where-Object {
       if ($_.MainWindowHandle -eq [IntPtr]::Zero) { return $false }
@@ -44,9 +83,32 @@ function Get-ClipHarbourProcess {
     }
 }
 
+function Stop-StaleDebugProcesses {
+  Get-Process -Name "clip_harbour" -ErrorAction SilentlyContinue |
+    Where-Object { Test-IsDebugPath $_.Path } |
+    ForEach-Object {
+      Write-LaunchLog "Stopping stale debug clip_harbour pid=$($_.Id) (Vite down or standalone preferred)"
+      try { Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue } catch { }
+    }
+}
+
 function Show-ExistingWindow {
   $proc = Get-ClipHarbourProcess | Select-Object -First 1
   if (-not $proc) { return $false }
+
+  $path = $proc.Path
+  $isRelease = Test-IsReleasePath $path
+  $isDebug = Test-IsDebugPath $path
+
+  # Debug builds need the Vite server. If Cursor/terminal closed, Vite dies and the
+  # window is a zombie - do not "focus" it; restart instead.
+  if ($isDebug -and -not (Test-ViteReady)) {
+    Write-LaunchLog "Existing debug pid=$($proc.Id) but Vite not on :1420 - restarting"
+    Stop-StaleDebugProcesses
+    return $false
+  }
+
+  # Prefer bringing a healthy release (or live debug+Vite) window to front.
   Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -57,15 +119,20 @@ public static class NativeFocus {
 "@ -ErrorAction SilentlyContinue
   [void][NativeFocus]::ShowWindowAsync($proc.MainWindowHandle, 9) # SW_RESTORE
   [void][NativeFocus]::SetForegroundWindow($proc.MainWindowHandle)
-  Write-LaunchLog "Focused existing clip_harbour pid=$($proc.Id) path=$($proc.Path)"
+  Write-LaunchLog "Focused existing clip_harbour pid=$($proc.Id) path=$path release=$isRelease debug=$isDebug"
   return $true
 }
 
 try {
-  Set-Content -Path $logFile -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') launcher start root=$root" -Encoding utf8
+  Set-Content -Path $logFile -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') launcher start root=$root forceDev=$forceDev" -Encoding utf8
 } catch { }
 
 if (Show-ExistingWindow) { exit 0 }
+
+$releaseExe = $null
+if (-not $forceDev) {
+  $releaseExe = Get-StandaloneReleaseExe
+}
 
 # --- Splash UI ---
 $form = New-Object System.Windows.Forms.Form
@@ -127,42 +194,68 @@ $progress.Location = New-Object System.Drawing.Point([int](($form.Width - 280) /
 
 $form.Controls.AddRange(@($picture, $title, $status, $progress))
 
-if (-not (Test-Path -LiteralPath $devScript)) {
-  Write-LaunchLog "Missing $devScript"
-  [System.Windows.Forms.MessageBox]::Show(
-    "No se encontro dev-windows.ps1 en:`r`n$devScript",
-    "Clip Harbour",
-    [System.Windows.Forms.MessageBoxButtons]::OK,
-    [System.Windows.Forms.MessageBoxIcon]::Error
-  ) | Out-Null
-  exit 1
+$child = $null
+$launchMode = "dev"
+
+if ($releaseExe) {
+  # Standalone: no npm / Vite / Cursor required.
+  Stop-StaleDebugProcesses
+  Write-LaunchLog "Starting standalone release: $releaseExe"
+  $child = Start-Process -FilePath $releaseExe -WorkingDirectory (Split-Path $releaseExe -Parent) -PassThru
+  $launchMode = "release"
+  Write-LaunchLog "Release pid=$($child.Id)"
+} else {
+  if (-not (Test-Path -LiteralPath $devScript)) {
+    Write-LaunchLog "Missing release exe and missing $devScript"
+    [System.Windows.Forms.MessageBox]::Show(
+      "No hay build standalone ni dev-windows.ps1.`r`n`r`nCompila una vez:`r`nnpm run tauri -- build`r`n`r`nO abre el proyecto y ejecuta:`r`nnpm run tauri -- dev",
+      "Clip Harbour",
+      [System.Windows.Forms.MessageBoxButtons]::OK,
+      [System.Windows.Forms.MessageBoxIcon]::Error
+    ) | Out-Null
+    exit 1
+  }
+
+  # Log tauri/npm output so failures without Cursor are diagnosable.
+  try {
+    Set-Content -Path $devLogFile -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') starting $devScript" -Encoding utf8
+  } catch { }
+
+  # Detached hidden PowerShell; tee output to temp log (do not redirect Start-Process
+  # pipes - that can kill the tree when the splash exits).
+  $argLine = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -Command `"& { `$ErrorActionPreference='Continue'; try { & '$devScript' *>&1 | Tee-Object -FilePath '$devLogFile' -Append } catch { `$_ | Out-File -FilePath '$devLogFile' -Append; exit 1 }; exit `$LASTEXITCODE }`""
+  Write-LaunchLog "Starting detached via $psExe : $devScript (log=$devLogFile)"
+
+  $child = Start-Process -FilePath $psExe `
+    -ArgumentList $argLine `
+    -WorkingDirectory $root `
+    -WindowStyle Hidden `
+    -PassThru
+  Write-LaunchLog "Child powershell pid=$($child.Id)"
 }
 
-# Start Tauri in a detached hidden PowerShell so closing the splash does not
-# kill npm/cargo/clip_harbour (redirected pipes would keep the child attached).
-$argLine = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$devScript`""
-Write-LaunchLog "Starting detached via $psExe : $devScript"
+if ($launchMode -eq "release") {
+  $stages = @(
+    @{ At = 0;  Text = "Abriendo Clip Harbour..." },
+    @{ At = 3;  Text = "Casi listo..." }
+  )
+  $maxSeconds = 60
+  $quietExitGraceSeconds = 15
+} else {
+  $stages = @(
+    @{ At = 0;    Text = "Preparando entorno..." },
+    @{ At = 8;    Text = "Cargando herramientas..." },
+    @{ At = 20;   Text = "Compilando Clip Harbour..." },
+    @{ At = 55;   Text = "Abriendo la interfaz..." },
+    @{ At = 90;   Text = "Casi listo..." }
+  )
+  $maxSeconds = 600
+  $quietExitGraceSeconds = 45
+}
 
-$child = Start-Process -FilePath $psExe `
-  -ArgumentList $argLine `
-  -WorkingDirectory $root `
-  -WindowStyle Hidden `
-  -PassThru
-Write-LaunchLog "Child powershell pid=$($child.Id)"
-
-$stages = @(
-  @{ At = 0;    Text = "Preparando entorno..." },
-  @{ At = 8;    Text = "Cargando herramientas..." },
-  @{ At = 20;   Text = "Compilando Clip Harbour..." },
-  @{ At = 55;   Text = "Abriendo la interfaz..." },
-  @{ At = 90;   Text = "Casi listo..." }
-)
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $done = $false
 $failed = $false
-$maxSeconds = 600
-# If the wrapper exits successfully but no window appears, fail sooner than maxSeconds.
-$quietExitGraceSeconds = 45
 
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 250
@@ -186,17 +279,15 @@ $timer.Add_Tick({
 
   if ($child -and $child.HasExited -and -not (Get-ClipHarbourProcess)) {
     $code = $child.ExitCode
-    # Fail-fast on any non-zero exit (do not wait 15s).
     if ($code -ne 0) {
-      Write-LaunchLog "Child exited code=$code"
+      Write-LaunchLog "Child exited code=$code mode=$launchMode"
       $script:failed = $true
       $timer.Stop()
       $form.Close()
       return
     }
-    # Exit 0 but no window: wrapper finished without launching UI.
     if ($sec -ge $quietExitGraceSeconds) {
-      Write-LaunchLog "Child exited 0 with no clip_harbour window after ${quietExitGraceSeconds}s"
+      Write-LaunchLog "Child exited 0 with no clip_harbour window after ${quietExitGraceSeconds}s mode=$launchMode"
       $script:failed = $true
       $timer.Stop()
       $form.Close()
@@ -215,13 +306,18 @@ $timer.Add_Tick({
 $form.Add_Shown({ $timer.Start() })
 $form.Add_FormClosed({
   $timer.Stop()
-  try { Write-LaunchLog "splash closed done=$done failed=$failed" } catch { }
+  try { Write-LaunchLog "splash closed done=$done failed=$failed mode=$launchMode" } catch { }
 })
 
 [void]$form.ShowDialog()
 
 if ($failed) {
-  $msg = "No se pudo iniciar Clip Harbour.`r`n`r`nRevisa el registro:`r`n$logFile`r`n`r`nO ejecuta en una terminal:`r`nnpm run tauri -- dev"
+  $hint = if ($launchMode -eq "release") {
+    "O ejecuta el .exe:`r`n$releaseExe"
+  } else {
+    "O ejecuta en una terminal:`r`nnpm run tauri -- build`r`n(despues el acceso directo usara el .exe sin Cursor)`r`n`r`nDev log: $devLogFile"
+  }
+  $msg = "No se pudo iniciar Clip Harbour.`r`n`r`nRevisa el registro:`r`n$logFile`r`n`r`n$hint"
   [System.Windows.Forms.MessageBox]::Show(
     $msg,
     "Clip Harbour",

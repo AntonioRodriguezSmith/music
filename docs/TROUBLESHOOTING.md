@@ -16,8 +16,9 @@ Use the native Clip Harbour window. On Windows you can also use the **Clip Harbo
 |---------|--------|
 | Se abre una ventana negra de CMD | El `.lnk` debe apuntar a `wscript.exe` + `scripts\launch-clip-harbour.vbs`, no a `powershell.exe` a pelo. Recrea el acceso directo con la guía en [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md). |
 | Texto del splash ilegible (`Ã…`, símbolos raros) | `launch-clip-harbour.ps1` debe estar en **UTF-8 con BOM**; textos con `...` ASCII, no `…`. |
-| Splash no se cierra nunca | Mira `%TEMP%\clip-harbour-launch.log`. Falta `npm install`, sidecars (`npm run fetch:sidecars:windows`) o error de Rust/MSVC. Prueba `npm run dev:windows` en una terminal para ver el error. |
-| Doble instancia | Si ya hay `clip_harbour` con ventana, el lanzador solo la enfoca. Cierra la app antes de un arranque limpio. |
+| Splash no se cierra nunca | Mira `%TEMP%\clip-harbour-launch.log` y `%TEMP%\clip-harbour-dev.log`. Falta `npm install`, sidecars (`npm run fetch:sidecars:windows`) o error de Rust/MSVC. Prueba `npm run dev:windows` en una terminal para ver el error. |
+| **Solo arranca si Cursor está abierto** | El acceso directo estaba usando `tauri dev` (Vite). Al cerrar Cursor muere Vite y queda un `clip_harbour` debug zombie. **Solución:** `npm run tauri -- build` una vez; el lanzador preferirá `%LOCALAPPDATA%\clip_harbour-target\release\clip_harbour.exe` (sin IDE). |
+| Doble instancia | Si ya hay `clip_harbour` sano con ventana, el lanzador solo la enfoca. Cierra la app antes de un arranque limpio. |
 | Icono genérico en el Escritorio | `IconLocation` → `assets\clip-harbour-app-icon.ico`. |
 | En el Administrador de tareas ves `node` de InterLocu / Cursor | No son Clip Harbour. El lanzador solo reconoce el proceso `clip_harbour`. Si el acceso directo no abre nada, mira `%TEMP%\clip-harbour-launch.log` y recrea el `.lnk` (ver [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md)). |
 | Splash aparece y la app se cierra al instante | Corregido: el splash ya no redirige stdout del hijo (eso mataba `tauri dev` al cerrar el splash). VBS usa `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe` (no el stub WindowsApps). |
