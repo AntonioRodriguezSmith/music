@@ -60,6 +60,10 @@ backup-duplicados/
 * (Conflicted copy)*
 *.tmp
 
+# Tauri updater private keys (keep pubkey only in tauri.conf.json)
+.tauri/
+*.key
+
 # OS / editor
 .vscode/*
 !.vscode/extensions.json

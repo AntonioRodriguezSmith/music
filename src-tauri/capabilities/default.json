@@ -28,6 +28,8 @@
     "dialog:default",
     "shell:allow-open",
     "shell:allow-kill",
+    "updater:default",
+    "process:default",
     {
       "identifier": "shell:allow-spawn",
       "allow": [

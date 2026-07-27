@@ -4,9 +4,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { loadCookiePrefs, saveCookiePrefs } from "../../lib/cookies_prefs";
 import { isTauri } from "../../lib/tauri_env";
+import { useVideo } from "../../providers/video_context";
 
 export default function CookiesSettings() {
   const { t } = useTranslation();
+  const { clearPreviewCache } = useVideo();
   const [file, setFile] = useState(() => loadCookiePrefs().cookiesFile);
   const [openPanel, setOpenPanel] = useState(false);
   const [ytdlpVersion, setYtdlpVersion] = useState("");
@@ -31,6 +33,7 @@ export default function CookiesSettings() {
 
   function persistFile(nextFile) {
     saveCookiePrefs({ cookiesFile: nextFile });
+    clearPreviewCache?.();
   }
 
   async function pickCookiesFile() {

@@ -49,6 +49,30 @@ export function clearDownloadHistory() {
   return [];
 }
 
+/**
+ * @param {string} id
+ * @returns {HistoryItem[]}
+ */
+export function removeDownloadHistoryItem(id) {
+  const next = loadDownloadHistory().filter((h) => h.id !== id);
+  saveDownloadHistory(next);
+  return next;
+}
+
+/**
+ * Parent directory of a file path (Windows or POSIX separators).
+ * @param {string | null | undefined} filePath
+ * @returns {string | null}
+ */
+export function parentDirOf(filePath) {
+  const p = String(filePath || "").trim();
+  if (!p) return null;
+  const normalized = p.replace(/\//g, "\\");
+  const idx = normalized.lastIndexOf("\\");
+  if (idx <= 0) return null;
+  return normalized.slice(0, idx);
+}
+
 /** @param {HistoryItem[]} items */
 export function exportDownloadHistoryText(items = loadDownloadHistory()) {
   return items

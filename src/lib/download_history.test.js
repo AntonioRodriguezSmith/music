@@ -4,6 +4,8 @@ import {
   exportDownloadHistoryText,
   loadDownloadHistory,
   pushDownloadHistory,
+  removeDownloadHistoryItem,
+  parentDirOf,
 } from "./download_history";
 
 const store = new Map();
@@ -46,5 +48,20 @@ describe("download_history", () => {
     expect(text).toContain("https://youtu.be/x");
     expect(clearDownloadHistory()).toEqual([]);
     expect(loadDownloadHistory()).toEqual([]);
+  });
+
+  it("removes a single item by id", () => {
+    const a = pushDownloadHistory({ title: "A", filename: "a.m4a" });
+    const b = pushDownloadHistory({ title: "B", filename: "b.m4a" });
+    const id = b[0].id;
+    const next = removeDownloadHistoryItem(id);
+    expect(next.map((h) => h.title)).toEqual(["A"]);
+    expect(loadDownloadHistory()).toHaveLength(1);
+    expect(a[0].title).toBe("A");
+  });
+
+  it("parentDirOf handles windows paths", () => {
+    expect(parentDirOf("C:\\Users\\x\\Music\\song.m4a")).toBe("C:\\Users\\x\\Music");
+    expect(parentDirOf("")).toBeNull();
   });
 });

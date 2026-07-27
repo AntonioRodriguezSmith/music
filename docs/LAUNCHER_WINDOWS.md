@@ -48,6 +48,14 @@ El script PowerShell debe guardarse en **UTF-8 con BOM**. Los textos de estado u
 
 ## Recrear el acceso directo del Escritorio
 
+Preferido:
+
+```powershell
+npm run install:shortcut:windows
+```
+
+Manual (equivalente):
+
 ```powershell
 $root = "C:\Users\rodri\Proton Drive\Proyectos\music"   # ajusta si hace falta
 $desktop = [Environment]::GetFolderPath("Desktop")
@@ -75,9 +83,7 @@ $sc.Save()
 ## Relación con el icono de Tauri
 
 - Splash / acceso directo: `assets/clip-harbour-app-*` (fork).
-- Icono embebido en builds Tauri: `src-tauri/icons/` (upstream + opcional `clip-harbour-launcher.ico`).
-
-Para un instalador firmado con icono de producto unificado, regenerar `src-tauri/icons` a partir del PNG del fork (fuera del alcance del lanzador dev).
+- Icono embebido en builds Tauri: `src-tauri/icons/` — regenerar con `npm run regen:icons` desde el PNG del fork.
 
 ## Problemas frecuentes
 

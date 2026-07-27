@@ -1,5 +1,5 @@
-# Optional Authenticode signing for MSI/NSIS artifacts.
-# Skips with exit 0 when no cert env is configured (Fase 2 default).
+# Optional Authenticode signing for MSI/NSIS/exe artifacts (incl. portable staging).
+# Skips with exit 0 when no cert env is configured.
 #
 # Env (either):
 #   CLIP_HARBOUR_CERT_THUMBPRINT  — cert thumbprint in CurrentUser\My
@@ -7,13 +7,22 @@
 #
 # Usage:
 #   .\scripts\sign-windows.ps1
-#   .\scripts\sign-windows.ps1 -ArtifactDir "src-tauri\target\release\bundle"
+#   .\scripts\sign-windows.ps1 -ArtifactDir "$env:LOCALAPPDATA\clip_harbour-target\release"
 
 param(
-  [string]$ArtifactDir = "src-tauri\target\release\bundle"
+  [string]$ArtifactDir = ""
 )
 
 $ErrorActionPreference = "Stop"
+
+if (-not $ArtifactDir) {
+  if ($env:CARGO_TARGET_DIR) {
+    $ArtifactDir = Join-Path $env:CARGO_TARGET_DIR "release"
+  } else {
+    $ArtifactDir = "src-tauri\target\release"
+  }
+}
+
 $thumb = $env:CLIP_HARBOUR_CERT_THUMBPRINT
 $pfx = $env:CLIP_HARBOUR_PFX_PATH
 $pfxPass = $env:CLIP_HARBOUR_PFX_PASSWORD
@@ -39,7 +48,8 @@ if (-not $signtool) {
 
 $files = @()
 if (Test-Path $ArtifactDir) {
-  $files += Get-ChildItem -Path $ArtifactDir -Recurse -Include *.msi, *.exe -File -ErrorAction SilentlyContinue
+  $files += Get-ChildItem -Path $ArtifactDir -Recurse -Include *.msi, *.exe -File -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -notmatch 'uninstall' }
 }
 
 if ($files.Count -eq 0) {
@@ -59,4 +69,4 @@ foreach ($file in $files) {
   }
 }
 
-Write-Host "sign-windows: done."
+Write-Host "sign-windows: done ($($files.Count) file(s))."

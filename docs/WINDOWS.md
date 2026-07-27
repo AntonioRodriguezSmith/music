@@ -34,16 +34,18 @@ Outputs (relative to `CARGO_TARGET_DIR`):
 - `release\clip_harbour.exe`
 - `release\bundle\msi\clip_harbour_0.1.0_x64_en-US.msi`
 - `release\bundle\nsis\clip_harbour_0.1.0_x64-setup.exe`
+- `release\bundle\portable\clip_harbour-portable-win64.zip` — `npm run pack:portable:windows` (Fase 3)
+- `release\bundle\updater\latest.json` — `npm run updater:latest` (stub; firmar antes de publicar)
 
-Installers are **unsigned** by default (`npm run sign:windows` skips without cert). Upstream GitHub releases remain Linux-oriented; this fork builds Windows packages locally.
+Installers are **unsigned** by default (`npm run sign:windows` skips without cert). Upstream GitHub releases remain Linux-oriented; this fork builds Windows packages locally or via Actions.
 
 ### GitHub Actions release (`workflow_dispatch`)
 
-[`.github/workflows/release-windows.yml`](../../.github/workflows/release-windows.yml) sets `CARGO_TARGET_DIR` to `src-tauri/target` on the runner so MSI/NSIS match `upload-artifact`, and uses `Swatinem/rust-cache@v2` (`workspaces: src-tauri`). Locally keep the default under `%LOCALAPPDATA%\clip_harbour-target` (avoids synced folders). Do not mix those paths when collecting artifacts.
+[`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) sets `CARGO_TARGET_DIR` to `src-tauri/target` on the runner so MSI/NSIS/portable/updater match `upload-artifact`, and uses `Swatinem/rust-cache@v2` (`workspaces: src-tauri`). Locally keep the default under `%LOCALAPPDATA%\clip_harbour-target` (avoids synced folders). Do not mix those paths when collecting artifacts.
 
-CI ([`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)): Windows smoke always; `cargo check` only when `src-tauri/**` changes (paths-filter + rust-cache). Local gate: `npm run check:rust` / `check:rust:bg`.
+Optional Authenticode on Actions: secrets `CLIP_HARBOUR_PFX_BASE64` (+ `CLIP_HARBOUR_PFX_PASSWORD`) and/or `CLIP_HARBOUR_CERT_THUMBPRINT`. Details: [PHASE3_SETUP.md](./PHASE3_SETUP.md).
 
-There is **no portable ZIP** package in Fase 1/2 — only MSI, NSIS setup, and the release `.exe` under `CARGO_TARGET_DIR`.
+CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)): Windows smoke always; `cargo check` only when `src-tauri/**` changes (paths-filter + rust-cache). Local gate: `npm run check:rust` / `check:rust:bg`.
 
 ## What changed
 

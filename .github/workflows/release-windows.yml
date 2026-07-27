@@ -1,9 +1,8 @@
-name: Release Windows (unsigned)
+name: Release Windows
 
-# Builds MSI + NSIS via npm run tauri -- build (scripts/tauri-windows.ps1 → setup-windows-env.ps1).
-# MSVC is resolved with vswhere (Enterprise/BuildTools on GitHub Actions) or known VS paths.
+# Builds MSI + NSIS + portable ZIP via npm run tauri -- build.
+# Optional Authenticode: CLIP_HARBOUR_PFX_BASE64 (+ password) and/or CERT_THUMBPRINT.
 # Pin CARGO_TARGET_DIR to the repo so upload-artifact matches the bundle path.
-# Locally, setup-windows-env.ps1 defaults to %LOCALAPPDATA%\clip_harbour-target if unset.
 
 on:
   workflow_dispatch:
@@ -23,7 +22,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
-      # First run after lockfile change is still cold; later dispatches restore this cache.
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
@@ -31,15 +29,55 @@ jobs:
       - run: npm run fetch:sidecars:windows
       - name: Build installers
         run: npm run tauri -- build
+      - name: Pack portable ZIP
+        run: npm run pack:portable:windows
+      - name: Write updater latest.json stub
+        run: npm run updater:latest
+      # Hosted runners have no local PFX path / cert store. Decode base64 → temp file.
+      # Local/self-hosted can still use CLIP_HARBOUR_CERT_THUMBPRINT alone.
+      - name: Prepare Authenticode PFX (optional)
+        shell: pwsh
+        # fromJSON(toJSON(secrets)) avoids Actions LS "Context access might be invalid" for custom secret names.
+        env:
+          CLIP_HARBOUR_PFX_BASE64: ${{ fromJSON(toJSON(secrets)).CLIP_HARBOUR_PFX_BASE64 }}
+        run: |
+          if (-not $env:CLIP_HARBOUR_PFX_BASE64) {
+            Add-Content -Path $env:GITHUB_ENV -Value "CLIP_HARBOUR_SIGNING_CONFIGURED=false"
+            Write-Host "No CLIP_HARBOUR_PFX_BASE64 - signing will skip unless thumbprint secret is set."
+            exit 0
+          }
+          $pfxPath = Join-Path $env:RUNNER_TEMP "clip-harbour-codesign.pfx"
+          [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:CLIP_HARBOUR_PFX_BASE64))
+          Add-Content -Path $env:GITHUB_ENV -Value "CLIP_HARBOUR_PFX_PATH=$pfxPath"
+          Add-Content -Path $env:GITHUB_ENV -Value "CLIP_HARBOUR_SIGNING_CONFIGURED=true"
+          Write-Host "Wrote PFX to runner temp for signing."
+      - name: Sign artifacts (optional)
+        shell: pwsh
+        env:
+          CLIP_HARBOUR_CERT_THUMBPRINT: ${{ fromJSON(toJSON(secrets)).CLIP_HARBOUR_CERT_THUMBPRINT }}
+          CLIP_HARBOUR_PFX_PASSWORD: ${{ fromJSON(toJSON(secrets)).CLIP_HARBOUR_PFX_PASSWORD }}
+        run: |
+          if ($env:CLIP_HARBOUR_CERT_THUMBPRINT) {
+            Add-Content -Path $env:GITHUB_ENV -Value "CLIP_HARBOUR_SIGNING_CONFIGURED=true"
+          }
+          npm run sign:windows
+          if ($env:CLIP_HARBOUR_PFX_PATH -and (Test-Path -LiteralPath $env:CLIP_HARBOUR_PFX_PATH)) {
+            Remove-Item -LiteralPath $env:CLIP_HARBOUR_PFX_PATH -Force
+          }
       - name: List bundle outputs
         shell: pwsh
         run: |
+          # Boolean from GITHUB_ENV only — never interpolate secrets into the script/logs.
+          Write-Host "Authenticode signing configured: $($env:CLIP_HARBOUR_SIGNING_CONFIGURED)"
           Get-ChildItem -Recurse "$env:CARGO_TARGET_DIR/release/bundle" -ErrorAction SilentlyContinue |
             Select-Object FullName, Length
       - uses: actions/upload-artifact@v5
         with:
-          name: windows-installers-unsigned
+          name: windows-installers
           if-no-files-found: error
           path: |
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/portable/*.zip
+            src-tauri/target/release/bundle/updater/latest.json
+            src-tauri/target/release/clip_harbour.exe

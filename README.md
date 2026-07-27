@@ -123,7 +123,9 @@ npm run smoke:windows        # sidecars --version + tests unitarios
 # cookies: ver docs/PHASE2_SETUP.md
 npm run dev:windows
 npm run launch:windows       # splash Escritorio; prefer .exe release (sin Cursor)
+npm run install:shortcut:windows  # recrea Clip Harbour.lnk
 npm run tauri -- build       # .exe standalone + MSI/NSIS en %LOCALAPPDATA%\clip_harbour-target\release\
+npm run pack:portable:windows     # ZIP portable (tras build)
 # Authenticode opcional (hace skip si no hay cert en el entorno):
 npm run sign:windows
 ```
@@ -134,7 +136,7 @@ Usa siempre la **ventana de la app de escritorio** para probar búsqueda y desca
 
 Si ves `cargo metadata: program not found`, abre una **terminal nueva** (el PATH se define en `.vscode/settings.json`) o ejecuta `npm run tauri -- dev` / `npm run dev:windows`.
 
-Resumen Fase 2: **[docs/PHASE2.md](docs/PHASE2.md)**. Cierre Fase 1: **[docs/PHASE1.md](docs/PHASE1.md)**.
+Resumen Fase 3: **[docs/PHASE3.md](docs/PHASE3.md)**. Resumen Fase 2: **[docs/PHASE2.md](docs/PHASE2.md)**. Cierre Fase 1: **[docs/PHASE1.md](docs/PHASE1.md)**.
 
 ## Licencia
 Este proyecto está bajo la licencia GNU GPL-3.0. Puedes usar, modificar y distribuir el software según los términos de la [licencia GPL-3.0](https://github.com/amansxcalibur/clip_harbour/blob/main/LICENSE.md).

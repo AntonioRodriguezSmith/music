@@ -12,14 +12,17 @@ import CircularProgressBar from "../ui/circle_progress";
 import { isActive, isFinished } from "../../lib/download_status";
 import { setAppLanguage } from "../../i18n";
 import i18n from "../../i18n";
-import { QUEUE_PAGE_SIZE } from "../../lib/search_constants";
+import { QUEUE_PAGE_SIZE, HISTORY_PAGE_SIZE } from "../../lib/search_constants";
 import { useDownloadQueue } from "../../providers/download_queue_context";
 import { DownloadPathContext } from "../../providers/download_path_context";
 import {
   clearDownloadHistory,
   exportDownloadHistoryText,
+  parentDirOf,
+  removeDownloadHistoryItem,
 } from "../../lib/download_history";
 import { isTauri } from "../../lib/tauri_env";
+import UpdateChecker from "./update_checker";
 
 export default function SideBar({ open, setOpen }) {
   const { t } = useTranslation();
@@ -36,6 +39,7 @@ export default function SideBar({ open, setOpen }) {
   } = useDownloadQueue();
   const { downloadPath } = useContext(DownloadPathContext);
   const [queuePage, setQueuePage] = useState(0);
+  const [historyPage, setHistoryPage] = useState(0);
   const [tab, setTab] = useState("queue");
   const [resuming, setResuming] = useState(false);
   const lang = i18n.language?.startsWith("en") ? "en" : "es";
@@ -73,10 +77,22 @@ export default function SideBar({ open, setOpen }) {
     [entries],
   );
   const hasFinished = entries.some(([, d]) => isFinished(d.status) || d.status === "cancelled" || d.status?.startsWith("error"));
+  const hasCancellable = entries.some(([, d]) => isActive(d.status));
+
+  const historyTotalPages = Math.max(1, Math.ceil(history.length / HISTORY_PAGE_SIZE));
+  const histPage = Math.min(historyPage, historyTotalPages - 1);
+  const pageHistory = history.slice(
+    histPage * HISTORY_PAGE_SIZE,
+    histPage * HISTORY_PAGE_SIZE + HISTORY_PAGE_SIZE,
+  );
 
   useEffect(() => {
     if (queuePage > totalPages - 1) setQueuePage(Math.max(0, totalPages - 1));
   }, [queuePage, totalPages]);
+
+  useEffect(() => {
+    if (historyPage > historyTotalPages - 1) setHistoryPage(Math.max(0, historyTotalPages - 1));
+  }, [historyPage, historyTotalPages]);
 
   async function openHistoryFile(filename) {
     if (!isTauri()) return;
@@ -93,6 +109,31 @@ export default function SideBar({ open, setOpen }) {
         typeof e === "string" ? e : e?.message || t("sidebar.openFileFailed");
       alert(message);
     }
+  }
+
+  async function openHistoryFolder(filename) {
+    if (!isTauri()) return;
+    const dir = parentDirOf(filename);
+    if (!dir) {
+      alert(t("sidebar.openFolderFailed"));
+      return;
+    }
+    try {
+      await openPath(dir);
+    } catch (e) {
+      console.error(e);
+      const message =
+        typeof e === "string" ? e : e?.message || t("sidebar.openFolderFailed");
+      alert(message);
+    }
+  }
+
+  async function cancelAllActive() {
+    if (!isTauri()) return;
+    const ids = entries.filter(([, d]) => isActive(d.status)).map(([id]) => id);
+    await Promise.allSettled(
+      ids.map((id) => invoke("stop_download", { id: parseInt(id, 10) })),
+    );
   }
 
   async function handleResume() {
@@ -248,6 +289,15 @@ export default function SideBar({ open, setOpen }) {
                     </button>
                   </div>
                 ) : null}
+                {hasCancellable ? (
+                  <button
+                    type="button"
+                    className="w-full text-left text-xs hover:underline"
+                    onClick={() => void cancelAllActive()}
+                  >
+                    {t("sidebar.cancelAll")}
+                  </button>
+                ) : null}
                 {hasFinished ? (
                   <button
                     type="button"
@@ -264,10 +314,10 @@ export default function SideBar({ open, setOpen }) {
           {open && tab === "history" ? (
             <>
               <ul className="mt-1 flex flex-col flex-1 min-h-0 overflow-y-auto w-full gap-1">
-                {history.length === 0 ? (
+                {pageHistory.length === 0 ? (
                   <li className="text-xs text-[#555] py-2">{t("sidebar.historyEmpty")}</li>
                 ) : (
-                  history.slice(0, 50).map((item) => (
+                  pageHistory.map((item) => (
                     <li key={item.id} className="text-xs border-b border-black/10 py-1">
                       <p className="truncate font-medium" title={item.title}>
                         {item.title || t("download.titleFallback")}
@@ -275,20 +325,63 @@ export default function SideBar({ open, setOpen }) {
                       <p className="truncate text-[10px] text-[#555]" title={item.filename}>
                         {item.filename || new Date(item.finishedAt).toLocaleString()}
                       </p>
-                      {item.filename ? (
+                      <div className="flex flex-wrap gap-2 mt-0.5">
+                        {item.filename ? (
+                          <>
+                            <button
+                              type="button"
+                              className="text-[10px] underline"
+                              onClick={() => openHistoryFile(item.filename)}
+                            >
+                              {t("sidebar.openFile")}
+                            </button>
+                            <button
+                              type="button"
+                              className="text-[10px] underline"
+                              onClick={() => openHistoryFolder(item.filename)}
+                            >
+                              {t("sidebar.openHistoryFolder")}
+                            </button>
+                          </>
+                        ) : null}
                         <button
                           type="button"
-                          className="text-[10px] underline mt-0.5"
-                          onClick={() => openHistoryFile(item.filename)}
+                          className="text-[10px] underline"
+                          onClick={() => setHistory(removeDownloadHistoryItem(item.id))}
                         >
-                          {t("sidebar.openFile")}
+                          {t("sidebar.removeHistoryItem")}
                         </button>
-                      ) : null}
+                      </div>
                     </li>
                   ))
                 )}
               </ul>
               <div className="shrink-0 mt-2 space-y-1 border-t border-black/20 pt-2">
+                {history.length > HISTORY_PAGE_SIZE ? (
+                  <div className="flex items-center justify-between text-xs gap-1">
+                    <button
+                      type="button"
+                      disabled={histPage <= 0}
+                      className="disabled:opacity-40 px-1"
+                      onClick={() => setHistoryPage((p) => Math.max(0, p - 1))}
+                    >
+                      {t("search.prev")}
+                    </button>
+                    <span>
+                      {t("sidebar.queuePage", { page: histPage + 1, total: historyTotalPages })}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={histPage >= historyTotalPages - 1}
+                      className="disabled:opacity-40 px-1"
+                      onClick={() =>
+                        setHistoryPage((p) => Math.min(historyTotalPages - 1, p + 1))
+                      }
+                    >
+                      {t("search.next")}
+                    </button>
+                  </div>
+                ) : null}
                 <button
                   type="button"
                   className="w-full text-left text-xs hover:underline"
@@ -299,7 +392,10 @@ export default function SideBar({ open, setOpen }) {
                 <button
                   type="button"
                   className="w-full text-left text-xs hover:underline"
-                  onClick={() => setHistory(clearDownloadHistory())}
+                  onClick={() => {
+                    setHistory(clearDownloadHistory());
+                    setHistoryPage(0);
+                  }}
                 >
                   {t("search.historyClear")}
                 </button>
@@ -332,6 +428,7 @@ export default function SideBar({ open, setOpen }) {
               <>
                 <FolderPicker />
                 <CookiesSettings />
+                <UpdateChecker />
               </>
             ) : (
               <button

@@ -4,7 +4,9 @@
 
 ## Fases
 
-- [PHASE3.md](./PHASE3.md) — Fase 3 (en curso): distribución, portable, firma, auto-update, UX
+- [PHASE3.md](./PHASE3.md) — Fase 3 (**implementada**): distribución, portable, firma, auto-update, UX
+- [PHASE3_SETUP.md](./PHASE3_SETUP.md) — build release, secrets CI, updater
+- [PHASE3_CHECKLIST.md](./PHASE3_CHECKLIST.md) / [PHASE3_AUDIT.md](./PHASE3_AUDIT.md)
 - [PHASE2.md](./PHASE2.md) — Fase 2 (cerrada): cola, cookies Método A, CI, seguridad
 - [PHASE2_SETUP.md](./PHASE2_SETUP.md) — setup local (`.env` + cookies.txt)
 - [PHASE1.md](./PHASE1.md) — Fase 1 (cerrada)

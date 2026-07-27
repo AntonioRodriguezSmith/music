@@ -2,6 +2,14 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-07 — Phase 3
+
+- **Summary:** [PHASE3.md](./PHASE3.md) · setup [PHASE3_SETUP.md](./PHASE3_SETUP.md) · checklist [PHASE3_CHECKLIST.md](./PHASE3_CHECKLIST.md) · audit [PHASE3_AUDIT.md](./PHASE3_AUDIT.md).
+- **Distribution:** portable ZIP (`pack:portable:windows`), desktop shortcut installer, CH icons regenerated into `src-tauri/icons`.
+- **Signing:** `sign-windows.ps1` covers release tree; CI uses `CLIP_HARBOUR_PFX_BASE64` → temp PFX (no local path secret); logs only `CLIP_HARBOUR_SIGNING_CONFIGURED`.
+- **Updater:** `tauri-plugin-updater` + process relaunch; endpoint GitHub Releases `latest.json`.
+- **UX:** cancel all queue; history remove / open folder / pager; empty search history + clear results; preview cache cleared on cookies change.
+
 ## 2026-07 — Phase 2 closeout (standalone launcher)
 
 - **Launcher:** desktop splash prefers `%LOCALAPPDATA%\clip_harbour-target\release\clip_harbour.exe` (no Cursor/Vite); stale debug without Vite is restarted — [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).

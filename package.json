@@ -16,6 +16,10 @@
     "fetch:sidecars:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/fetch-windows-sidecars.ps1",
     "smoke:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/smoke-windows.ps1",
     "sign:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/sign-windows.ps1",
+    "pack:portable:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/pack-portable-windows.ps1",
+    "install:shortcut:windows": "powershell -ExecutionPolicy Bypass -File ./scripts/install-desktop-shortcut.ps1",
+    "regen:icons": "powershell -ExecutionPolicy Bypass -File ./scripts/regen-tauri-icons.ps1",
+    "updater:latest": "powershell -ExecutionPolicy Bypass -File ./scripts/write-updater-latest.ps1",
     "filter:cookies": "powershell -ExecutionPolicy Bypass -File ./scripts/filter-youtube-cookies.ps1",
     "check:rust": "powershell -ExecutionPolicy Bypass -File ./scripts/cargo-check-windows.ps1",
     "check:rust:bg": "powershell -ExecutionPolicy Bypass -File ./scripts/cargo-check-bg.ps1"
@@ -24,22 +28,24 @@
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.5",
+    "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-shell": "^2.2.0",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "i18next": "^26.3.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^17.0.10"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.1",
     "@tailwindcss/vite": "^4.0.8",
-    "@tauri-apps/cli": "^2",
+    "@tauri-apps/cli": "^2.11.4",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.3",
     "react-router-dom": "^7.2.0",
     "tailwindcss": "^3.4.17",
     "vite": "^6.0.3",
-    "@playwright/test": "^1.54.1",
     "vitest": "^3.2.7"
   }
 }

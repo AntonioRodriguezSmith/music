@@ -18,6 +18,7 @@ export const SEARCH_RESULT_GRID =
 
 export const FORMAT_PAGE_SIZE = 12;
 export const QUEUE_PAGE_SIZE = 6;
+export const HISTORY_PAGE_SIZE = 8;
 
 /**
  * How many fixed-height rows fit in the list viewport (pagination excluded).

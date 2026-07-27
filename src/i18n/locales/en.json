@@ -26,7 +26,17 @@
     "expand": "Expand",
     "langEs": "ES",
     "langEn": "EN",
-    "queuePage": "{{page}} / {{total}}"
+    "queuePage": "{{page}} / {{total}}",
+    "cancelAll": "Cancel all",
+    "removeHistoryItem": "Remove",
+    "openHistoryFolder": "Folder",
+    "checkUpdates": "Check for updates",
+    "updateChecking": "Checking…",
+    "updateNone": "You're up to date.",
+    "updateAvailable": "Version {{version}} is available.",
+    "updateConfirm": "Download and install version {{version}}? The app will restart.",
+    "updateInstalling": "Downloading and installing…",
+    "updateFailed": "Could not check or install the update (missing release/signature?)."
   },
   "search": {
     "placeholder": "Search or paste YouTube URL",
@@ -63,7 +73,8 @@
     "live": "Live",
     "historyTitle": "Recent searches",
     "historyClear": "Clear history",
-    "historyRemove": "Remove"
+    "historyRemove": "Remove",
+    "clearResults": "Clear results"
   },
   "download": {
     "fetching": "Fetching…",

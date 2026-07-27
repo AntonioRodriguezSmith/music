@@ -15,6 +15,7 @@ export default function Loader({ id, download }) {
   const active = isActive(download.status);
   const key = statusTranslationKey(download.status);
   const isError = key === "error";
+  const isRetrying = key === "retrying";
   const is403 = isError && /403/i.test(download.status || "");
   const statusLabel =
     isError && download.status?.startsWith("error")
@@ -33,14 +34,19 @@ export default function Loader({ id, download }) {
       </div>
       <div className="flex items-center -mt-0.5 gap-1">
         <div
-          className={`flex-1 min-w-0 ${isError ? "text-red-700" : ""}`}
+          className={`flex-1 min-w-0 ${isError ? "text-red-700" : isRetrying ? "text-amber-800" : ""}`}
           title={statusLabel}
         >
-          <div className="truncate leading-tight">{statusLabel}</div>
+          <div className="truncate leading-tight font-medium">{statusLabel}</div>
           {meta ? <div className="truncate text-[10px] text-[#555]">{meta}</div> : null}
           {is403 ? (
             <p className="text-[10px] text-red-800 leading-tight">
               {t("download.cookiesHint403")}
+            </p>
+          ) : null}
+          {isRetrying ? (
+            <p className="text-[10px] text-amber-900 leading-tight">
+              {t("download.status.retrying")}…
             </p>
           ) : null}
         </div>

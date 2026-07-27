@@ -29,12 +29,13 @@
     ],
     "withGlobalTauri": false,
     "security": {
-      "csp": "default-src 'self'; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost; script-src 'self'"
+      "csp": "default-src 'self'; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost https://github.com https://*.github.com https://objects.githubusercontent.com; script-src 'self'"
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
+    "createUpdaterArtifacts": true,
     "externalBin": ["binaries/yt-dlp", "binaries/ffmpeg"],
     "icon": [
       "icons/32x32.png",
@@ -43,5 +44,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhEQUY5M0E0NTU3MEY4MEUKUldRTytIQlZwSk92alZCQjJ0WmpTUnV3MU9IWVpYZ3MrOUNVZndWdTFiK1FOaWRVUEVxNWNxbHQK",
+      "endpoints": [
+        "https://github.com/AntonioRodriguezSmith/music/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

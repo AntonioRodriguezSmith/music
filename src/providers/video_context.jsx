@@ -204,6 +204,12 @@ export function VideoProvider({ children }) {
     }
   }, []);
 
+  const clearPreviewCache = useCallback(() => {
+    detailsCacheRef.current.clear();
+    enrichRequestRef.current += 1;
+    setEnrichingKey(null);
+  }, []);
+
   const isSearchLoading =
     Array.isArray(searchResults) &&
     searchResults.length === 1 &&
@@ -235,6 +241,7 @@ export function VideoProvider({ children }) {
         searchIdRef,
         enrichVideoDetails,
         enrichingKey,
+        clearPreviewCache,
         lastSearchQuery,
         beginReplaceSearch,
         loadMoreSearch,

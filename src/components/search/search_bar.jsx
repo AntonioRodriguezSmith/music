@@ -118,13 +118,24 @@ export default function SearchBar({ setIsFocused, isFocused }) {
     setShowHistory(false);
   }
 
+  function handleClearResults() {
+    setSearchResults(null);
+    setSelectedVideo(null);
+    setSearchValue("");
+    setError(null);
+    clearBulkSelection();
+    setShowHistory(true);
+    setHistory(loadSearchHistory());
+  }
+
   function handleRemoveItem(query, e) {
     e.preventDefault();
     e.stopPropagation();
     setHistory(removeSearchHistoryItem(query));
   }
 
-  const historyVisible = showHistory && history.length > 0 && !busy;
+  const historyVisible =
+    showHistory && history.length > 0 && !busy && !String(searchValue).trim();
 
   function handleDragOver(e) {
     e.preventDefault();
@@ -162,7 +173,12 @@ export default function SearchBar({ setIsFocused, isFocused }) {
             if (e.key === "Enter") void runSearch(searchValue);
             if (e.key === "Escape") setShowHistory(false);
           }}
-          onChange={(e) => setSearchValue(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setSearchValue(next);
+            if (!String(next).trim()) openHistory();
+            else setShowHistory(false);
+          }}
           onFocus={openHistory}
           type="text"
           autoComplete="off"
@@ -233,6 +249,16 @@ export default function SearchBar({ setIsFocused, isFocused }) {
         <p className="text-red-600 text-sm mt-2 max-w-xl whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
           {error}
         </p>
+      ) : null}
+
+      {Array.isArray(searchResults) && searchResults.length > 0 && !busy ? (
+        <button
+          type="button"
+          className="mt-2 text-xs underline hover:no-underline"
+          onClick={handleClearResults}
+        >
+          {t("search.clearResults")}
+        </button>
       ) : null}
     </div>
   );

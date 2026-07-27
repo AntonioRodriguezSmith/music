@@ -23,6 +23,18 @@ Use the native Clip Harbour window. On Windows you can also use the **Clip Harbo
 | En el Administrador de tareas ves `node` de InterLocu / Cursor | No son Clip Harbour. El lanzador solo reconoce el proceso `clip_harbour`. Si el acceso directo no abre nada, mira `%TEMP%\clip-harbour-launch.log` y recrea el `.lnk` (ver [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md)). |
 | Splash aparece y la app se cierra al instante | Corregido: el splash ya no redirige stdout del hijo (eso mataba `tauri dev` al cerrar el splash). VBS usa `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe` (no el stub WindowsApps). |
 
+## Portable / updates / signing (Fase 3)
+
+| Symptom | Check |
+|---------|--------|
+| Falta ZIP portable | `npm run tauri -- build` luego `npm run pack:portable:windows` → `%LOCALAPPDATA%\clip_harbour-target\release\bundle\portable\` |
+| “Buscar actualizaciones” falla | Normal sin GitHub Release firmado / `latest.json`. Ver [PHASE3_SETUP.md](./PHASE3_SETUP.md). La app sigue usable. |
+| Firma Authenticode skip | Sin thumbprint / `CLIP_HARBOUR_PFX_BASE64` (CI) o `PFX_PATH` (local) → `sign-windows` exit 0 a propósito. |
+| IDE: *Context access might be invalid* en secrets | Falso positivo del language server con secrets custom. El workflow usa `fromJSON(toJSON(secrets)).…`; ver [PHASE3_SETUP.md](./PHASE3_SETUP.md). |
+| Log CI muestra secretos | No debe: List solo imprime `CLIP_HARBOUR_SIGNING_CONFIGURED` (true/false). |
+| `cargo check` / fetch falla con schannel | Red a crates.io inestable; reintentar. Log: `%TEMP%\clip-harbour-cargo-check.log`. |
+| Updater private key | Solo en `.tauri/` (gitignored) o secrets CI `TAURI_SIGNING_PRIVATE_KEY`. Pubkey en `tauri.conf.json`. |
+
 ## Queue emptied when opening a video
 
 Fixed in this fork: one sidebar outside React Router. If you still see it, hard-reload the Tauri window.
