@@ -25,7 +25,7 @@
     "check:rust:bg": "powershell -ExecutionPolicy Bypass -File ./scripts/cargo-check-bg.ps1"
   },
   "dependencies": {
-    "@tauri-apps/api": "^2",
+    "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.5",
     "@tauri-apps/plugin-process": "^2.3.1",
