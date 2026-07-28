@@ -1,4 +1,5 @@
 mod models;
+mod player_cache;
 mod queue;
 mod state;
 mod ytdlp;
@@ -11,6 +12,7 @@ use tauri::{Manager, PhysicalPosition, PhysicalSize, Position, Size};
 use tauri_plugin_shell::process::CommandChild;
 
 use models::Download;
+use player_cache::{player_cache_dir, purge_player_cache};
 use queue::{
     clear_finished_downloads, pause_download, resume_download, start_download, stop_download,
 };
@@ -64,6 +66,8 @@ pub fn run() {
             resume_download,
             clear_finished_downloads,
             get_ytdlp_version,
+            player_cache_dir,
+            purge_player_cache,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

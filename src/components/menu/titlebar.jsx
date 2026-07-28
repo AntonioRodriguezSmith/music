@@ -1,11 +1,21 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
 import { isTauri } from "../../lib/tauri_env";
+import {
+  APP_MODES,
+  modeFromPath,
+  pathForMode,
+  saveAppMode,
+} from "../../lib/app_mode";
 
 export default function TitleBar({ onMaximizedChange }) {
   const { t } = useTranslation();
   const [maximized, setMaximized] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const mode = modeFromPath(location.pathname);
 
   useEffect(() => {
     if (!isTauri()) return undefined;
@@ -41,12 +51,42 @@ export default function TitleBar({ onMaximizedChange }) {
     };
   }, [onMaximizedChange]);
 
+  function setMode(next) {
+    saveAppMode(next);
+    navigate(pathForMode(next));
+  }
+
+  const modeToggle = (
+    <div className="relative z-10 flex items-center gap-1 text-[11px] mr-2">
+      <button
+        type="button"
+        className={`px-2 py-0.5 border border-black rounded ${
+          mode === APP_MODES.DOWNLOAD ? "bg-black text-white" : "bg-white"
+        }`}
+        onClick={() => setMode(APP_MODES.DOWNLOAD)}
+      >
+        {t("app.modeDownload")}
+      </button>
+      <button
+        type="button"
+        className={`px-2 py-0.5 border border-black rounded ${
+          mode === APP_MODES.PLAYER ? "bg-black text-white" : "bg-white"
+        }`}
+        onClick={() => setMode(APP_MODES.PLAYER)}
+      >
+        {t("app.modePlayer")}
+      </button>
+    </div>
+  );
+
   if (!isTauri()) {
     return (
-      <div className="titlebar shrink-0 flex items-center justify-center px-3 select-none">
-        <span className="text-[13px] font-medium tracking-wide text-[#1d1d1f] select-none">
+      <div className="titlebar shrink-0 flex items-center justify-between px-3 select-none">
+        {modeToggle}
+        <span className="text-[13px] font-medium tracking-wide text-[#1d1d1f] select-none absolute left-1/2 -translate-x-1/2">
           {t("app.name")}
         </span>
+        <div className="w-[54px]" />
       </div>
     );
   }
@@ -72,7 +112,9 @@ export default function TitleBar({ onMaximizedChange }) {
         </span>
       </div>
 
-      <div className="w-[54px] shrink-0" aria-hidden />
+      <div className="relative z-10 flex items-center w-[140px] shrink-0">
+        {modeToggle}
+      </div>
       <div className="flex-1 min-w-0" />
 
       <div className="titlebar-controls relative z-10 flex items-center gap-[8px] w-[54px] shrink-0 justify-end">

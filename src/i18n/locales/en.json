@@ -3,7 +3,29 @@
     "name": "Clip Harbour",
     "minimize": "Minimize",
     "maximize": "Maximize",
-    "close": "Close"
+    "close": "Close",
+    "modeDownload": "Download",
+    "modePlayer": "Player"
+  },
+  "player": {
+    "noTrack": "Pick a video to play",
+    "prev": "Previous",
+    "next": "Next",
+    "downloadAudio": "Download audio",
+    "audioQueued": "Audio queued",
+    "audioFailed": "Could not queue audio",
+    "playlist": "Playlist",
+    "playlistEmpty": "Playlist empty",
+    "searchResults": "Search",
+    "searchHint": "Search above and press Play",
+    "play": "Play",
+    "add": "Add",
+    "remove": "Remove",
+    "statusIdle": "Ready",
+    "statusWaiting": "Waiting (queue full)",
+    "statusCaching": "Preparing video…",
+    "statusPlaying": "Playing",
+    "statusError": "Error"
   },
   "sidebar": {
     "tabQueue": "Queue",
@@ -45,6 +67,7 @@
     "browserOnly": "Open the Clip Harbour desktop window (npm run tauri -- dev). The browser cannot search.",
     "failed": "Search failed",
     "noResultsYet": "No results yet. Search a term or paste a YouTube URL.",
+    "loading": "Loading…",
     "noVideos": "No videos found. Try another search.",
     "browserHintTitle": "You are in the browser (Vite), not the desktop app.",
     "browserHintBody": "Search and downloads only work in the native Clip Harbour window. Start with npm run tauri -- dev and use that window (not just localhost:1420).",

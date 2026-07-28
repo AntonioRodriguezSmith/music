@@ -29,7 +29,7 @@
     ],
     "withGlobalTauri": false,
     "security": {
-      "csp": "default-src 'self'; img-src 'self' https: data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost https://github.com https://*.github.com https://objects.githubusercontent.com; script-src 'self'"
+      "csp": "default-src 'self'; img-src 'self' https: data: blob:; media-src 'self' asset: http://asset.localhost blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost https://github.com https://*.github.com https://objects.githubusercontent.com; script-src 'self'"
     }
   },
   "bundle": {

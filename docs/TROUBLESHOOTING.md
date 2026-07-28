@@ -10,6 +10,16 @@ npm run tauri -- dev
 
 Use the native Clip Harbour window. On Windows you can also use the **Clip Harbour** desktop shortcut (splash, no console) — see [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md).
 
+## Player mode (Fase 4)
+
+| Symptom | Check |
+|---------|--------|
+| Vídeo no reproduce / pantalla negra | Cookies Método A; CSP `media-src` + `convertFileSrc`; cache en `%TEMP%\clip_harbour\cache`. Ver [PHASE4_SETUP.md](./PHASE4_SETUP.md). |
+| “En espera (cola llena)” | Máx. 2 jobs; espera a que termine una descarga o cancela en sidebar. |
+| 403 / bot check al cachear | Reexporta cookies.txt ([PHASE2_SETUP.md](./PHASE2_SETUP.md)). |
+| Descargar audio no hace nada | Carpeta de descarga en sidebar; el audio usa la cola normal (sí historial). |
+| Toggle Player no aparece | Titlebar: **Descargar \| Player**. Preferencia `clip_harbour_app_mode`. |
+
 ## Splash / acceso directo (Windows)
 
 | Symptom | Check |

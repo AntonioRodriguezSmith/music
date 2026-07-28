@@ -99,15 +99,17 @@ export function DownloadQueueProvider({ children }) {
         const was = prev[id];
         if (isFinished(download.status) && was && !isFinished(was.status)) {
           const cfg = configsRef.current.get(String(id));
-          setHistory(
-            pushDownloadHistory({
-              id: String(id),
-              title: download.title || cfg?.title || "",
-              filename: download.filename || "",
-              url: cfg?.url || "",
-              status: download.status,
-            }),
-          );
+          if (cfg?.purpose !== "cache") {
+            setHistory(
+              pushDownloadHistory({
+                id: String(id),
+                title: download.title || cfg?.title || "",
+                filename: download.filename || "",
+                url: cfg?.url || "",
+                status: download.status,
+              }),
+            );
+          }
           configsRef.current.delete(String(id));
         }
         if (

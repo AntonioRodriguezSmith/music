@@ -181,16 +181,28 @@ pub fn parse_config(config: DownloadConfig) -> Result<Vec<String>, String> {
         args.push("-P".to_string());
         args.push(dir);
         args.push("-o".to_string());
-        args.push("%(title).200B.%(ext)s".to_string());
+        if config.purpose.as_deref() == Some("cache") {
+            args.push("%(id)s.%(ext)s".to_string());
+        } else {
+            args.push("%(title).200B.%(ext)s".to_string());
+        }
     }
 
+    let is_cache = config.purpose.as_deref() == Some("cache");
     if let Some(format) = config.format.filter(|x| !x.is_empty()) {
-        // Download exactly the selected format — one stream, no merge.
         args.push("-f".to_string());
         args.push(format);
+    } else if is_cache {
+        args.push("-f".to_string());
+        args.push("bv*[height<=720]+ba/b".to_string());
     } else {
         args.push("-f".to_string());
         args.push("bestaudio/best".to_string());
+    }
+
+    if is_cache {
+        args.push("--merge-output-format".to_string());
+        args.push("mp4".to_string());
     }
 
     if let Some(proxy) = config.proxy_url.filter(|x| !x.is_empty()) {

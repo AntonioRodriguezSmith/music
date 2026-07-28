@@ -24,7 +24,8 @@ import {
 import { isTauri } from "../../lib/tauri_env";
 import UpdateChecker from "./update_checker";
 
-export default function SideBar({ open, setOpen }) {
+export default function SideBar({ open, setOpen, compact = false }) {
+  void compact;
   const { t } = useTranslation();
   const {
     downloads,

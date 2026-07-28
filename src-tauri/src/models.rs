@@ -38,6 +38,9 @@ pub struct DownloadConfig {
     pub duration_raw: Option<f64>,
     pub cookies_file: Option<String>,
     pub cookies_from_browser: Option<String>,
+    /// "cache" = player temp media; skipped from user download history on the FE.
+    #[serde(default)]
+    pub purpose: Option<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]

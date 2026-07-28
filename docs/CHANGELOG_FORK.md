@@ -2,6 +2,18 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-07 — Phase 4 Player MVP (P0–P9)
+
+- **Mode:** titlebar toggle Descarga|Player; route `/player` — search, playlist, cache play ≤720p, Descargar audio.
+- **Docs:** [PHASE4.md](./PHASE4.md) · [phase4/SPEC.md](./phase4/SPEC.md) · [PHASE4_AUDIT.md](./PHASE4_AUDIT.md).
+- **Backend:** `purpose=cache`, `player_cache_dir` / `purge_player_cache`, CSP `media-src` asset.
+- **PRs:** individual `phase4(P#)` still pending (implemented in one pass).
+
+## 2026-07 — Phase 4 docs scaffold (P0)
+
+- **Hub:** [PHASE4.md](./PHASE4.md) (mapa + cierres only) · [phase4/SPEC.md](./phase4/SPEC.md) · [PHASE4_SETUP.md](./PHASE4_SETUP.md) · [PHASE4_CHECKLIST.md](./PHASE4_CHECKLIST.md).
+- **Subplans:** [phase4/](./phase4/) P0–P9.
+
 ## 2026-07 — Phase 3 release ops
 
 - **GitHub Release:** [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) — MSI, NSIS, portable ZIP, exe, updater `.sig` + `latest.json`.

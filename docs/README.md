@@ -4,6 +4,8 @@
 
 ## Fases
 
+- [PHASE4.md](./PHASE4.md) — Fase 4 (**MVP**): modo Player; [SPEC](./phase4/SPEC.md) · [AUDIT](./PHASE4_AUDIT.md)
+- [PHASE4_SETUP.md](./PHASE4_SETUP.md) / [PHASE4_CHECKLIST.md](./PHASE4_CHECKLIST.md)
 - [PHASE3.md](./PHASE3.md) — Fase 3 (**publicada** [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0)): distribución, portable, updater; Authenticode opcional/aplazado
 - [PHASE3_SETUP.md](./PHASE3_SETUP.md) — build release, secrets CI, updater, notas uso personal
 - [PHASE3_CHECKLIST.md](./PHASE3_CHECKLIST.md) / [PHASE3_AUDIT.md](./PHASE3_AUDIT.md)

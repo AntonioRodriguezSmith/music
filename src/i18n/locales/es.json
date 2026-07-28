@@ -3,7 +3,29 @@
     "name": "Clip Harbour",
     "minimize": "Minimizar",
     "maximize": "Maximizar",
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "modeDownload": "Descargar",
+    "modePlayer": "Player"
+  },
+  "player": {
+    "noTrack": "Elige un vídeo para reproducir",
+    "prev": "Anterior",
+    "next": "Siguiente",
+    "downloadAudio": "Descargar audio",
+    "audioQueued": "Audio en cola",
+    "audioFailed": "No se pudo encolar el audio",
+    "playlist": "Lista",
+    "playlistEmpty": "Lista vacía",
+    "searchResults": "Búsqueda",
+    "searchHint": "Busca arriba y pulsa Reproducir",
+    "play": "Reproducir",
+    "add": "Añadir",
+    "remove": "Quitar",
+    "statusIdle": "Listo",
+    "statusWaiting": "En espera (cola llena)",
+    "statusCaching": "Preparando vídeo…",
+    "statusPlaying": "Reproduciendo",
+    "statusError": "Error"
   },
   "sidebar": {
     "tabQueue": "Cola",
@@ -45,6 +67,7 @@
     "browserOnly": "Abre la ventana de escritorio de Clip Harbour (npm run tauri -- dev). El navegador no puede buscar.",
     "failed": "La búsqueda falló",
     "noResultsYet": "Sin resultados todavía. Busca un término o pega una URL de YouTube.",
+    "loading": "Cargando…",
     "noVideos": "No se encontraron vídeos. Prueba otra búsqueda.",
     "browserHintTitle": "Estás en el navegador (Vite), no en la app de escritorio.",
     "browserHintBody": "La búsqueda y las descargas solo funcionan en la ventana nativa de Clip Harbour. Arranca con npm run tauri -- dev y usa esa ventana (no solo localhost:1420).",
