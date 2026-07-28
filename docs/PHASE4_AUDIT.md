@@ -1,7 +1,7 @@
 # Fase 4 — Audit
 
 **Fecha:** 2026-07-28  
-**Veredicto:** MVP Player implementado en código; ritual de PRs 1:1 pendiente (sesión continua).
+**Veredicto:** MVP Player en PR [#1](https://github.com/AntonioRodriguezSmith/music/pull/1) (P0–P9 en un solo PR; ritual 1:1 diferido).
 
 ## Alcance entregado
 
@@ -17,8 +17,7 @@
 
 ## Pendiente operativo
 
-- Abrir PRs `phase4(P#)` y anotar `#N` en master (hoy: `pendiente`)
-- Smoke manual SETUP en ventana Tauri con cookies
+- PR #1 abierto; smoke manual SETUP en ventana Tauri con cookies
 
 ## No incluido (parking)
 

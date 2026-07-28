@@ -68,6 +68,6 @@
 - Doc: [phase4/P8_POLISH.md](./phase4/P8_POLISH.md)
 
 ### P9 — Closeout (hecho 2026-07-28)
-- Entrega: AUDIT + checklist + CHANGELOG cierre; PRs aún pendientes de abrir
+- Entrega: AUDIT + checklist + CHANGELOG cierre; PR #1
 - PR: #1 — https://github.com/AntonioRodriguezSmith/music/pull/1
 - Doc: [phase4/P9_CLOSEOUT.md](./phase4/P9_CLOSEOUT.md)
