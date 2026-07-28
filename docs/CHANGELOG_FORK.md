@@ -2,6 +2,14 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-07 — Phase 3 release ops
+
+- **GitHub Release:** [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) — MSI, NSIS, portable ZIP, exe, updater `.sig` + `latest.json`.
+- **Portable README:** [PORTABLE_README.txt](./PORTABLE_README.txt) copied into the ZIP as `README.txt` (`pack-portable-windows.ps1`).
+- **Secrets:** `TAURI_SIGNING_PRIVATE_KEY` set; no Authenticode PFX (skip by design for personal use).
+- **Local:** `npm run check:rust` OK after crates.io/schannel cache repair.
+- **Deferred:** paid code-signing cert; app rename (`productName` / exe / `identifier`). Docs: [PHASE3_SETUP.md](./PHASE3_SETUP.md).
+
 ## 2026-07 — Phase 3
 
 - **Summary:** [PHASE3.md](./PHASE3.md) · setup [PHASE3_SETUP.md](./PHASE3_SETUP.md) · checklist [PHASE3_CHECKLIST.md](./PHASE3_CHECKLIST.md) · audit [PHASE3_AUDIT.md](./PHASE3_AUDIT.md).

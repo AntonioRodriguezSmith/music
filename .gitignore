@@ -55,6 +55,7 @@ src-tauri/.cargo/config.toml
 # Unrelated local trees (not part of Clip Harbour)
 web/
 backup-duplicados/
+release-artifacts/
 
 # Proton Drive / sync junk
 * (Conflicted copy)*

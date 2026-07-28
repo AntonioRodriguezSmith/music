@@ -28,11 +28,12 @@ Use the native Clip Harbour window. On Windows you can also use the **Clip Harbo
 | Symptom | Check |
 |---------|--------|
 | Falta ZIP portable | `npm run tauri -- build` luego `npm run pack:portable:windows` → `%LOCALAPPDATA%\clip_harbour-target\release\bundle\portable\` |
-| “Buscar actualizaciones” falla | Normal sin GitHub Release firmado / `latest.json`. Ver [PHASE3_SETUP.md](./PHASE3_SETUP.md). La app sigue usable. |
-| Firma Authenticode skip | Sin thumbprint / `CLIP_HARBOUR_PFX_BASE64` (CI) o `PFX_PATH` (local) → `sign-windows` exit 0 a propósito. |
+| “Buscar actualizaciones” falla | Comprueba Release [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) / `latest.json`. Sin release firmado el mensaje es claro; la app sigue usable. Ver [PHASE3_SETUP.md](./PHASE3_SETUP.md). |
+| Firma Authenticode skip | Sin thumbprint / `CLIP_HARBOUR_PFX_BASE64` (CI) o `PFX_PATH` (local) → `sign-windows` exit 0 a propósito. Normal en uso personal (no hay PFX gratis de confianza). |
+| SmartScreen / “editor desconocido” | Esperado sin Authenticode; *Más información* → *Ejecutar de todos modos*, o usa el portable/`clip_harbour.exe` local. |
+| `cargo check` / crates.io schannel | Flake de red; limpiar cache corrupt en `.cargo/registry/cache`, `curl -C - --ssl-no-revoke`, o reintentar. Log: `%TEMP%\clip-harbour-cargo-check.log`. CI suele ser más fiable. |
 | IDE: *Context access might be invalid* en secrets | Falso positivo del language server con secrets custom. El workflow usa `fromJSON(toJSON(secrets)).…`; ver [PHASE3_SETUP.md](./PHASE3_SETUP.md). |
 | Log CI muestra secretos | No debe: List solo imprime `CLIP_HARBOUR_SIGNING_CONFIGURED` (true/false). |
-| `cargo check` / fetch falla con schannel | Red a crates.io inestable; reintentar. Log: `%TEMP%\clip-harbour-cargo-check.log`. |
 | Updater private key | Solo en `.tauri/` (gitignored) o secrets CI `TAURI_SIGNING_PRIVATE_KEY`. Pubkey en `tauri.conf.json`. |
 
 ## Queue emptied when opening a video

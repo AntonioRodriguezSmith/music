@@ -18,12 +18,16 @@ Artefactos tipicos bajo `%LOCALAPPDATA%\clip_harbour-target\release\`:
 |-------|------|
 | Exe | `clip_harbour.exe` |
 | MSI / NSIS | `bundle\msi\…`, `bundle\nsis\…` |
-| Portable ZIP | `bundle\portable\clip_harbour-portable-win64.zip` |
+| Portable ZIP | `bundle\portable\clip_harbour-portable-win64.zip` (incluye `README.txt` desde [PORTABLE_README.txt](./PORTABLE_README.txt)) |
 | Updater stub | `bundle\updater\latest.json` |
 
 En CI (`release-windows.yml`) `CARGO_TARGET_DIR` es `src-tauri/target` (no LocalAppData).
 
 ## Firma Authenticode (opcional)
+
+**Uso personal:** no hace falta. No hay certificado Authenticode gratuito de confianza; sin PFX el build/CI hace **skip** (exit 0) y la app funciona. SmartScreen puede avisar al abrir un instalador descargado (*Más información* → *Ejecutar de todos modos*). El cert FNMT de email/cliente **no** sirve para code signing.
+
+Aplaza Authenticode hasta que haya un PFX de code signing de pago (OV/EV) y usuarios finales que lo necesiten. Renombrar la app (`productName` / exe / `identifier`) también queda **aplazado**; el nombre visible sigue siendo Clip Harbour.
 
 ### Local
 
@@ -59,16 +63,22 @@ Flujo del workflow:
 
 En el YAML, los secrets se inyectan con `fromJSON(toJSON(secrets)).NOMBRE` para evitar el falso positivo del language server del IDE (*Context access might be invalid*). Los nombres de secrets en GitHub Settings no cambian.
 
-Sin secrets el artifact queda unsigned.
+Sin secrets el artifact queda unsigned (estado actual del fork).
 
 ## Auto-update
 
 1. Genera claves (local, no commits): `npm run tauri -- signer generate -w .tauri/clip-harbour.key` (carpeta `.tauri/` en `.gitignore`).
 2. Pubkey en `src-tauri/tauri.conf.json` → `plugins.updater.pubkey` (ya hay una generada en el fork; regenera si rotas claves).
-3. CI / release: `TAURI_SIGNING_PRIVATE_KEY` (+ password si aplica) para firmar el instalador / `latest.json`.
+3. CI / release: secret `TAURI_SIGNING_PRIVATE_KEY` (+ password si aplica) para firmar el instalador / `latest.json`.
 4. Publica en GitHub Releases: NSIS (o MSI) + `latest.json` firmado en  
    `https://github.com/AntonioRodriguezSmith/music/releases/latest/download/…`
 5. Endpoint configurado: ese `latest.json`.
+
+### Estado publicado (2026-07-28)
+
+- Release del fork: [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) — MSI, NSIS, portable ZIP, `clip_harbour.exe`, `.sig`, `latest.json`.
+- `TAURI_SIGNING_PRIVATE_KEY` configurado en el repo; Authenticode **no** (sin `CLIP_HARBOUR_PFX_*`).
+- Workflow: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (`workflow_dispatch`).
 
 Sin Release firmado, **Buscar actualizaciones** muestra un error claro; la app sigue usable.
 

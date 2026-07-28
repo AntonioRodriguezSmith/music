@@ -11,7 +11,7 @@ Clip Harbour es una interfaz gráfica multiplataforma, sencilla y completa, para
 
 Mira el [vídeo de demostración](https://www.youtube.com/watch?v=VYv4jSYCPak).
 
-> **Windows:** las releases oficiales de GitHub del proyecto original son solo Linux. Este árbol incluye soporte para compilar y ejecutar en Windows — ver [docs/WINDOWS.md](docs/WINDOWS.md).
+> **Windows (este fork):** hay release [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) (MSI / NSIS / [portable](docs/PORTABLE_README.txt)). Upstream sigue siendo Linux-only. Build local: [docs/WINDOWS.md](docs/WINDOWS.md). Setup Fase 3: [docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md).
 
 # Índice
 
@@ -50,32 +50,31 @@ Existen otros frontends como [ezytdl](https://github.com/sylviiu/ezytdl) o [yout
   * Panel **Datos clave** con campos legibles y traducidos (códec, bitrate, frecuencia, resolución, tamaño) en lugar de claves JSON crudas.
   * Idioma de la UI **ES / EN** (español por defecto); preferencia guardada en local.
   * Ventana sin decoración nativa, estilo iTunes: shell redondeado, titlebar con degradado, controles circulares a la derecha.
-  * Sidebar de cola con pestañas **Cola | Historial**, paginación (6 por página), limpiar terminados, abrir carpeta; máximo **2** descargas en paralelo (`queued` para el resto).
+  * Sidebar de cola con pestañas **Cola | Historial**, paginación, limpiar terminados, **cancelar todas**, abrir carpeta / fichero; máximo **2** descargas en paralelo (`queued` para el resto).
+  * **Buscar actualizaciones** (updater Tauri vía GitHub Releases).
+  * **Portable ZIP** Windows (`clip_harbour-portable-win64.zip`) — sin instalador; ver [docs/PORTABLE_README.txt](docs/PORTABLE_README.txt).
   * Integración con `ffmpeg` para conversión bajo demanda; la barra usa 0–70 % descarga / 70–100 % conversión cuando hay convert.
   * Estadísticas de progreso: velocidad, ETA, tamaño, bytes descargados, etc.
   * Incrustar miniaturas y subtítulos en el fichero.
-  * Notas del fork: [docs/PHASE2.md](docs/PHASE2.md), [docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md), [docs/PHASE1.md](docs/PHASE1.md) (Fase 1 cerrada), [docs/CHANGELOG_FORK.md](docs/CHANGELOG_FORK.md), [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+  * Notas del fork: [docs/PHASE3.md](docs/PHASE3.md), [docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md), [docs/WINDOWS.md](docs/WINDOWS.md), [docs/CHANGELOG_FORK.md](docs/CHANGELOG_FORK.md), [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Uso
-Ve a la página de [releases](https://github.com/amansxcalibur/clip_harbour/releases) del proyecto original y descarga el binario de tu SO.
+**Este fork (Windows):** descarga [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) — MSI, instalador NSIS o ZIP portable ([instrucciones](docs/PORTABLE_README.txt)). Authenticode no incluido (uso personal); detalle en [docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md).
 
-**Nota:** las versiones con sufijo `_python` requieren Python instalado.
+Upstream (Linux y builds originales): [releases de clip_harbour](https://github.com/amansxcalibur/clip_harbour/releases). Las versiones con sufijo `_python` requieren Python.
 
-**Usuarios Windows:** aún no hay release oficial para Windows — compila desde el código con la sección [Desarrollo en Windows](#desarrollo-en-windows).
-
-En la app de escritorio (ventana nativa con `npm run tauri -- dev` / `npm run dev:windows`). En Windows: acceso directo **Clip Harbour** del Escritorio con splash (icono grande + barra de progreso, sin consola) — guía completa en [docs/LAUNCHER_WINDOWS.md](docs/LAUNCHER_WINDOWS.md).
+En la app de escritorio (ventana nativa con `npm run tauri -- dev` / `npm run dev:windows`). En Windows: acceso directo **Clip Harbour** del Escritorio con splash — [docs/LAUNCHER_WINDOWS.md](docs/LAUNCHER_WINDOWS.md).
 - Usa el control **ES | EN** en la sidebar para cambiar el idioma.
-- Busca o pega una URL de YouTube (campo redondeado + botón negro). Navega con Anterior / Siguiente — las filas por página se fijan tras el primer layout de esa búsqueda (redimensionar no cambia cuántas URLs ves por página). Pasa el ratón ~400 ms sobre una fila para ver miniatura y metadatos a la derecha (enriquecidos con `get_url_details` si hace falta).
-- Marca vídeos y pulsa **Configurar descarga**, o abre un resultado concreto (los formatos se cargan con `get_url_details`).
+- Busca o pega una URL de YouTube. Navega con Anterior / Siguiente (filas por página fijadas tras el primer layout). Pasa el ratón ~400 ms sobre una fila para ver miniatura y metadatos.
+- Marca vídeos y pulsa **Configurar descarga**, o abre un resultado concreto.
 - En la pantalla de descarga, elige un **modo**:
   - **Standard** (por defecto): mejor audio; cambia formato/salida si quieres.
-  - **USB BMW**: mejor audio y conversión a **M4A** (compatible USB BMW). Cambia a **MP3** si lo necesitas. Tras convertir bien, se borra el fichero fuente temporal.
+  - **USB BMW**: mejor audio y conversión a **M4A** (MP3 opcional). Tras convertir bien, se borra el fichero fuente temporal.
   - **PC**: mejor audio en Opus/WebM sin conversión — no pensado para USB del coche.
-- Expande **Formatos disponibles** para elegir un stream. Cabeceras Formato / Tipo / Calidad / Tamaño. Por defecto se listan los útiles; **Mostrar todos** incluye mhtml/storyboard. **Anterior / Siguiente** si hay más de doce formatos.
-- **Nota bulk:** la descarga múltiple usa `bestaudio/best` por URL (no un único format id).
-- Expande **Datos clave** para ver códec, bitrate, frecuencia de muestreo y tamaño del formato elegido (etiquetas en ES/EN).
-- Elige carpeta de descarga y **cookies.txt** de YouTube (Método A) en la sidebar — ver [docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md).
-- Sidebar **Cola | Historial**: paginación de cola, limpiar terminados, abrir carpeta, **abrir fichero terminado**, exportar historial. Tras un reinicio con pendientes: **Reanudar N pendientes** → Reintentar (re-descarga).
+- Expande **Formatos disponibles** / **Datos clave** según necesites.
+- **Nota bulk:** la descarga múltiple usa `bestaudio/best` por URL.
+- Elige carpeta de descarga y **cookies.txt** (Método A) en la sidebar — [docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md).
+- Sidebar **Cola | Historial**: cancelar todas, abrir carpeta/fichero, exportar historial. Tras reinicio con pendientes: **Reanudar** → Reintentar.
 
 ## Configuración de desarrollo
 ### Requisitos
@@ -130,7 +129,7 @@ npm run pack:portable:windows     # ZIP portable (tras build)
 npm run sign:windows
 ```
 
-Requisitos: workload C++ de MSVC, Windows SDK, WebView2. El launcher pone `CARGO_TARGET_DIR` bajo `%LOCALAPPDATA%` para no escribir builds en carpetas sincronizadas (p. ej. Proton Drive). Artefactos: `%LOCALAPPDATA%\clip_harbour-target\release\bundle\` (ver [docs/PHASE1.md](docs/PHASE1.md)).
+Requisitos: workload C++ de MSVC, Windows SDK, WebView2. El launcher pone `CARGO_TARGET_DIR` bajo `%LOCALAPPDATA%` para no escribir builds en carpetas sincronizadas (p. ej. Proton Drive). Artefactos: `%LOCALAPPDATA%\clip_harbour-target\release\bundle\` (ver [docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md), [docs/WINDOWS.md](docs/WINDOWS.md)).
 
 Usa siempre la **ventana de la app de escritorio** para probar búsqueda y descarga.
 
@@ -139,4 +138,4 @@ Si ves `cargo metadata: program not found`, abre una **terminal nueva** (el PATH
 Resumen Fase 3: **[docs/PHASE3.md](docs/PHASE3.md)**. Resumen Fase 2: **[docs/PHASE2.md](docs/PHASE2.md)**. Cierre Fase 1: **[docs/PHASE1.md](docs/PHASE1.md)**.
 
 ## Licencia
-Este proyecto está bajo la licencia GNU GPL-3.0. Puedes usar, modificar y distribuir el software según los términos de la [licencia GPL-3.0](https://github.com/amansxcalibur/clip_harbour/blob/main/LICENSE.md).
+Este proyecto está bajo la licencia GNU GPL-3.0. Puedes usar, modificar y distribuir el software según los términos de la [licencia GPL-3.0](./LICENSE.md).

@@ -1,6 +1,6 @@
 # Windows changes (fork notes)
 
-This fork adds **Windows support** for [Clip Harbour](https://github.com/amansxcalibur/clip_harbour) (Tauri 2 + yt-dlp). Upstream releases are **Linux-only** as of v0.1.0-alpha; there is no official Windows installer yet.
+This fork adds **Windows support** for [Clip Harbour](https://github.com/amansxcalibur/clip_harbour) (Tauri 2 + yt-dlp). Upstream GitHub releases remain **Linux-oriented**. **This fork** ships Windows packages: [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) (MSI / NSIS / portable). Portable install notes: [PORTABLE_README.txt](./PORTABLE_README.txt). Setup: [PHASE3_SETUP.md](./PHASE3_SETUP.md).
 
 Docs for this stack: [Tauri 2](https://v2.tauri.app/) (not [Tauri 1](https://v1.tauri.app/)).
 
@@ -34,10 +34,10 @@ Outputs (relative to `CARGO_TARGET_DIR`):
 - `release\clip_harbour.exe`
 - `release\bundle\msi\clip_harbour_0.1.0_x64_en-US.msi`
 - `release\bundle\nsis\clip_harbour_0.1.0_x64-setup.exe`
-- `release\bundle\portable\clip_harbour-portable-win64.zip` — `npm run pack:portable:windows` (Fase 3)
-- `release\bundle\updater\latest.json` — `npm run updater:latest` (stub; firmar antes de publicar)
+- `release\bundle\portable\clip_harbour-portable-win64.zip` — `npm run pack:portable:windows` (incluye `README.txt` desde [PORTABLE_README.txt](./PORTABLE_README.txt))
+- `release\bundle\updater\latest.json` — `npm run updater:latest` (stub local; en GitHub Release v0.1.0 ya va firmado)
 
-Installers are **unsigned** by default (`npm run sign:windows` skips without cert). Upstream GitHub releases remain Linux-oriented; this fork builds Windows packages locally or via Actions.
+Installers are **unsigned** by default (`npm run sign:windows` skips without cert — fine for personal use). Upstream GitHub releases remain Linux-oriented; this fork publishes Windows builds via Actions + [Releases](https://github.com/AntonioRodriguezSmith/music/releases).
 
 ### GitHub Actions release (`workflow_dispatch`)
 

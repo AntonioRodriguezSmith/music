@@ -35,17 +35,11 @@ Copy-Item -LiteralPath $exe -Destination (Join-Path $stage "clip_harbour.exe")
 Copy-Item -LiteralPath $yt -Destination (Join-Path $stage "yt-dlp.exe")
 Copy-Item -LiteralPath $ff -Destination (Join-Path $stage "ffmpeg.exe")
 
-$readme = @"
-Clip Harbour — portable (Windows x64)
-
-1. Keep clip_harbour.exe, yt-dlp.exe and ffmpeg.exe in the same folder.
-2. Double-click clip_harbour.exe (WebView2 required).
-3. Set download folder and cookies.txt in the sidebar.
-
-Desktop splash launcher (dev tree): npm run install:shortcut:windows
-Docs: https://github.com/AntonioRodriguezSmith/music
-"@
-Set-Content -Path (Join-Path $stage "README.txt") -Value $readme -Encoding utf8
+$readmeSrc = Join-Path $root "docs\PORTABLE_README.txt"
+if (-not (Test-Path -LiteralPath $readmeSrc)) {
+  Write-Error "Missing $readmeSrc"
+}
+Copy-Item -LiteralPath $readmeSrc -Destination (Join-Path $stage "README.txt")
 
 if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
 Compress-Archive -Path (Join-Path $stage "*") -DestinationPath $zipPath -Force

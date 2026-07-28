@@ -2,7 +2,9 @@
 
 Distribución Windows (portable ZIP, iconos, shortcut), firma Authenticode, auto-update y UX de cola/historial/búsqueda.
 
-**Estado:** implementada (2026-07-28). Setup: [PHASE3_SETUP.md](./PHASE3_SETUP.md). Checklist: [PHASE3_CHECKLIST.md](./PHASE3_CHECKLIST.md). Auditoría: [PHASE3_AUDIT.md](./PHASE3_AUDIT.md).
+**Estado:** implementada y publicada (2026-07-28). Release fork [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) (updater firmado; Authenticode omitido a propósito para uso personal). Setup: [PHASE3_SETUP.md](./PHASE3_SETUP.md). Checklist: [PHASE3_CHECKLIST.md](./PHASE3_CHECKLIST.md). Auditoría: [PHASE3_AUDIT.md](./PHASE3_AUDIT.md).
+
+**Aplazado:** compra de cert Authenticode; renombrado de la app (`productName` / exe / `identifier`).
 
 ## Hitos
 
@@ -31,4 +33,4 @@ npm run pack:portable:windows   # requiere release build previo
 npm run check:rust
 ```
 
-Release CI: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (MSI + NSIS + portable ZIP + `latest.json` stub; Authenticode opcional vía `CLIP_HARBOUR_PFX_BASE64` — [PHASE3_SETUP.md](./PHASE3_SETUP.md)).
+Release CI: [`.github/workflows/release-windows.yml`](../.github/workflows/release-windows.yml) (MSI + NSIS + portable ZIP + `latest.json` firmado en Release; Authenticode opcional vía `CLIP_HARBOUR_PFX_BASE64` — [PHASE3_SETUP.md](./PHASE3_SETUP.md)).

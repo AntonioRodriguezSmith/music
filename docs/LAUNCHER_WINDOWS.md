@@ -2,8 +2,8 @@
 
 Arranque “de producto”: icono grande centrado, barra de progreso y **sin ventana de consola**.
 
-1. Si existe un build **release** (`%LOCALAPPDATA%\clip_harbour-target\release\clip_harbour.exe`), el acceso directo lanza ese `.exe` **sin Cursor, npm ni Vite**.
-2. Si no hay release, cae a `tauri dev` (necesita toolchain; ver abajo).
+1. Si existe un build **release** (`%LOCALAPPDATA%\clip_harbour-target\release\clip_harbour.exe`), el acceso directo lanza ese `.exe` **sin Cursor, npm ni Vite**. También puedes usar el instalador/portable de [GitHub Releases v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0).
+2. Si no hay release local, cae a `tauri dev` (necesita toolchain; ver abajo).
 3. Un proceso **debug** huérfano (ventana abierta pero Vite muerto tras cerrar Cursor) se detecta y se reinicia; no se “enfoca” a ciegas.
 
 ## Uso rápido

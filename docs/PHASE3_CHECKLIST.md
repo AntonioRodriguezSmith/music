@@ -36,3 +36,9 @@ Use the native window or the desktop shortcut (release `.exe`).
 
 - [x] TROUBLESHOOTING actualizado
 - [x] PHASE3_AUDIT con veredicto
+- [x] GitHub Release [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) (MSI/NSIS/portable/updater)
+- [x] `TAURI_SIGNING_PRIVATE_KEY` en secrets del repo
+- [x] Authenticode: skip documentado (uso personal; sin PFX)
+- [x] `npm run check:rust` OK en local (tras mitigar flake crates.io)
+- [ ] Authenticode con PFX de pago — **aplazado**
+- [ ] Renombrado app — **aplazado**
