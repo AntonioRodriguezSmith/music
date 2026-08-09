@@ -8,7 +8,7 @@ use tauri_plugin_shell::process::CommandChild;
 use crate::models::{Download, DownloadConfig};
 
 pub static PROCESS_COUNTER: AtomicUsize = AtomicUsize::new(0);
-pub const MAX_PARALLEL_DOWNLOADS: usize = 2;
+pub const MAX_PARALLEL_DOWNLOADS: usize = 1;
 
 #[derive(Debug, Clone)]
 pub struct AppState {

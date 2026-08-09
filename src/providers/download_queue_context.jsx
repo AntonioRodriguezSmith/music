@@ -28,6 +28,7 @@ const DownloadQueueContext = createContext({
   resumeItems: [],
   resumeError: null,
   registerDownloadConfig: () => {},
+  getDownloadPurpose: () => undefined,
   resumePending: async () => {},
   dismissResume: () => {},
   clearResumeError: () => {},
@@ -41,10 +42,26 @@ export function DownloadQueueProvider({ children }) {
   const [resumeError, setResumeError] = useState(null);
   const prevRef = useRef({});
   const configsRef = useRef(new Map());
+  /** Survives after config is dropped on finish — used to hide cache jobs in sidebar. */
+  const purposeByIdRef = useRef(new Map());
 
   const registerDownloadConfig = useCallback((id, config) => {
     if (id == null || !config) return;
-    configsRef.current.set(String(id), config);
+    const key = String(id);
+    configsRef.current.set(key, config);
+    if (config.purpose) {
+      purposeByIdRef.current.set(key, config.purpose);
+    }
+  }, []);
+
+  const getDownloadPurpose = useCallback((id) => {
+    if (id == null) return undefined;
+    const key = String(id);
+    return (
+      purposeByIdRef.current.get(key) ||
+      configsRef.current.get(key)?.purpose ||
+      undefined
+    );
   }, []);
 
   const dismissResume = useCallback(() => {
@@ -99,7 +116,7 @@ export function DownloadQueueProvider({ children }) {
         const was = prev[id];
         if (isFinished(download.status) && was && !isFinished(was.status)) {
           const cfg = configsRef.current.get(String(id));
-          if (cfg?.purpose !== "cache") {
+          if (cfg?.purpose !== "cache" && cfg?.purpose !== "playlist") {
             setHistory(
               pushDownloadHistory({
                 id: String(id),
@@ -174,6 +191,7 @@ export function DownloadQueueProvider({ children }) {
         resumeItems,
         resumeError,
         registerDownloadConfig,
+        getDownloadPurpose,
         resumePending,
         dismissResume,
         clearResumeError,

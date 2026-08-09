@@ -136,3 +136,59 @@
   font-weight: 500;
   font-style: italic;
 }
+
+/* Organic idle drift for Player empty search hint (uneven path, not a loop sine). */
+@keyframes player-hint-drift {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  18% {
+    transform: translate(3px, -5px) rotate(-0.6deg);
+  }
+  37% {
+    transform: translate(-4px, -2px) rotate(0.9deg);
+  }
+  52% {
+    transform: translate(2px, 4px) rotate(-0.3deg);
+  }
+  71% {
+    transform: translate(-5px, 1px) rotate(0.5deg);
+  }
+  89% {
+    transform: translate(1px, -3px) rotate(-0.8deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+@keyframes player-hint-fade {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  22% {
+    opacity: 0.85;
+  }
+  48% {
+    opacity: 0.62;
+  }
+  76% {
+    opacity: 0.9;
+  }
+}
+
+.player-search-hint {
+  animation:
+    player-hint-drift 11.4s cubic-bezier(0.37, 0.01, 0.22, 0.99) infinite,
+    player-hint-fade 7.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-search-hint {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+

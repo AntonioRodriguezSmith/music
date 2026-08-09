@@ -16,6 +16,8 @@
 
 ## Operación
 
+- [PLAYER_PLAYLISTS.md](./PLAYER_PLAYLISTS.md) — Player, listas offline, rate-limit YouTube (P10a–c/e; P10d parking)
+- [TAURI_URLS.md](./TAURI_URLS.md) — índice de URLs Tauri 1 (histórico) + Tauri 2 (canónico)
 - [WINDOWS.md](./WINDOWS.md) — desarrollo y build release en Windows
 - [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md) — splash + acceso directo Escritorio
 - [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) — problemas frecuentes

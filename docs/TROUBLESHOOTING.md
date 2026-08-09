@@ -14,10 +14,12 @@ Use the native Clip Harbour window. On Windows you can also use the **Clip Harbo
 
 | Symptom | Check |
 |---------|--------|
-| Vídeo no reproduce / pantalla negra | Cookies Método A; CSP `media-src` + `convertFileSrc`; cache en `%TEMP%\clip_harbour\cache`. Ver [PHASE4_SETUP.md](./PHASE4_SETUP.md). |
-| “En espera (cola llena)” | Máx. 2 jobs; espera a que termine una descarga o cancela en sidebar. |
+| Vídeo no reproduce / pantalla negra | Cookies Método A; CSP `media-src` con `asset:` + `http://asset.localhost`; scope assetProtocol debe incluir Music y **`.cache`** (`requireLiteralLeadingDot: false` o patrón literal). Ver [asset protocol](https://v2.tauri.app/es/security/asset-protocol/) · [PHASE4_SETUP](./PHASE4_SETUP.md). |
+| “En espera (cola llena)” | Máx. **1** job global; espera o cancela en sidebar. |
+| Rate-limit YouTube (`isn't available` / `rate-limited` / ~1 h) | Banner en Player; solo **offline**. Prefetch off. Esperar ~1 h; no martillar play/add. Opcional `CLIP_HARBOUR_YT_SLEEP=soft\|strict`. [PLAYER_PLAYLISTS.md](./PLAYER_PLAYLISTS.md). |
 | 403 / bot check al cachear | Reexporta cookies.txt ([PHASE2_SETUP.md](./PHASE2_SETUP.md)). |
-| Descargar audio no hace nada | Carpeta de descarga en sidebar; el audio usa la cola normal (sí historial). |
+| Lista dice offline pero no hay archivo | Reconcile pendiente (P10b); mientras, Quitar y Añadir de nuevo. |
+| Descargar audio no hace nada | Carpeta de audio en sidebar Player; usa cola normal (sí historial). |
 | Toggle Player no aparece | Titlebar: **Descargar \| Player**. Preferencia `clip_harbour_app_mode`. |
 
 ## Splash / acceso directo (Windows)
@@ -125,3 +127,5 @@ npm run smoke:windows
 ## Tauri docs
 
 Use **https://v2.tauri.app/** for Tauri 2 APIs (this app). The root `tauri.app` site may redirect; prefer the v2 URL explicitly.
+
+Full URL index (includes archived [Tauri 1 Quick Start](https://v1.tauri.app/v1/guides/getting-started/setup)): [TAURI_URLS.md](./TAURI_URLS.md).

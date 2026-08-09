@@ -95,6 +95,24 @@ if (Test-Path $sdkRoot) {
     }
 }
 
+# Load root .env into process (CLIP_HARBOUR_* / VITE_*). Does not override existing env.
+$dotenv = Join-Path (Split-Path $PSScriptRoot -Parent) ".env"
+if (Test-Path -LiteralPath $dotenv) {
+    Get-Content -LiteralPath $dotenv | ForEach-Object {
+        $line = $_.Trim()
+        if (-not $line -or $line.StartsWith("#")) { return }
+        $eq = $line.IndexOf("=")
+        if ($eq -lt 1) { return }
+        $key = $line.Substring(0, $eq).Trim()
+        $val = $line.Substring($eq + 1).Trim().Trim('"').Trim("'")
+        if ($key -notmatch '^(CLIP_HARBOUR_|VITE_)') { return }
+        $cur = [System.Environment]::GetEnvironmentVariable($key, "Process")
+        if (-not $cur) {
+            [System.Environment]::SetEnvironmentVariable($key, $val, "Process")
+        }
+    }
+}
+
 Write-Host "cargo: $(& cargo --version)"
 Write-Host "CARGO_TARGET_DIR=$env:CARGO_TARGET_DIR"
 Write-Host "MSVC: $vcvars"

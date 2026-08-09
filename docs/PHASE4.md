@@ -1,7 +1,7 @@
 # Fase 4 — Player
 
 **Estado:** MVP en PR [#1](https://github.com/AntonioRodriguezSmith/music/pull/1)  
-**Links:** [SETUP](./PHASE4_SETUP.md) · [SPEC](./phase4/SPEC.md) · [CHECKLIST](./PHASE4_CHECKLIST.md) · [AUDIT](./PHASE4_AUDIT.md)
+**Links:** [SETUP](./PHASE4_SETUP.md) · [SPEC](./phase4/SPEC.md) · [CHECKLIST](./PHASE4_CHECKLIST.md) · [AUDIT](./PHASE4_AUDIT.md) · [PLAYER_PLAYLISTS](./PLAYER_PLAYLISTS.md) (post-MVP + P10 a–c/e)
 
 **Objetivo:** mismo exe, dos vistas — Descarga intacta + Player ligero (reproducir, listas, Descargar audio). Detalle técnico en SPEC.
 

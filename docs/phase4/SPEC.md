@@ -7,7 +7,7 @@ Fuente de verdad técnica. El [master](../PHASE4.md) solo enlaza y recoge cierre
 | | `/` Descarga | `/player` |
 |--|--|--|
 | UI | Densa | Ligera; sidebar compacta |
-| Media | `download_path` | `%TEMP%\clip_harbour\cache` ≤720p → play → LRU 1 GB |
+| Media | `download_path` | `C:\Users\rodri\Music\MEmu video` (override `CLIP_HARBOUR_PLAYER_DIR`) |
 | CTA | Configurar | **Descargar audio** → cola `bestaudio` + historial |
 | Default | Sí | Opt-in `localStorage` (`clip_harbour_app_mode`) |
 

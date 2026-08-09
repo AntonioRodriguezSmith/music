@@ -12,7 +12,12 @@ use tauri::{Manager, PhysicalPosition, PhysicalSize, Position, Size};
 use tauri_plugin_shell::process::CommandChild;
 
 use models::Download;
-use player_cache::{player_cache_dir, purge_player_cache};
+use player_cache::{
+    append_playlist_archive, clear_player_cache, clear_playlist_media, delete_player_cache_file,
+    delete_playlist_dir, delete_playlist_file, list_playlist_video_ids, player_cache_dir,
+    player_keep_dir, playlist_dir, promote_to_playlist, prune_player_cache, purge_player_cache,
+    rename_playlist_dir, resolve_player_cache_file, resolve_playlist_file,
+};
 use queue::{
     clear_finished_downloads, pause_download, resume_download, start_download, stop_download,
 };
@@ -67,8 +72,27 @@ pub fn run() {
             clear_finished_downloads,
             get_ytdlp_version,
             player_cache_dir,
+            player_keep_dir,
+            playlist_dir,
+            resolve_playlist_file,
+            list_playlist_video_ids,
+            clear_playlist_media,
+            append_playlist_archive,
+            promote_to_playlist,
+            delete_playlist_file,
+            delete_playlist_dir,
+            rename_playlist_dir,
             purge_player_cache,
+            clear_player_cache,
+            prune_player_cache,
+            delete_player_cache_file,
+            resolve_player_cache_file,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, event| {
+            if let tauri::RunEvent::Exit = event {
+                let _ = clear_player_cache();
+            }
+        });
 }

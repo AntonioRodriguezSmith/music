@@ -14,7 +14,10 @@ import { useEffect, useRef, useState } from "react";
 import { VideoProvider } from "./providers/video_context";
 import { DownloadPathProvider } from "./providers/download_path_context";
 import { DownloadQueueProvider } from "./providers/download_queue_context";
-import { PlayerSessionProvider } from "./providers/player_session_context";
+import {
+  PlayerSessionProvider,
+  usePlayerSession,
+} from "./providers/player_session_context";
 import Home from "./home";
 import PlayerPage from "./player/PlayerPage";
 import {
@@ -23,6 +26,8 @@ import {
   modeFromPath,
   saveAppMode,
 } from "./lib/app_mode";
+import { invoke } from "@tauri-apps/api/core";
+import { isTauri } from "./lib/tauri_env";
 
 function ModeBootstrap() {
   const navigate = useNavigate();
@@ -36,6 +41,31 @@ function ModeBootstrap() {
       navigate("/player", { replace: true });
     }
   }, [location.pathname, navigate]);
+
+  return null;
+}
+
+/** Wipe ephemeral play cache when leaving Player or closing the window. */
+function PlayerSessionLifecycle() {
+  const location = useLocation();
+  const { endSession } = usePlayerSession();
+  const wasPlayer = useRef(false);
+
+  useEffect(() => {
+    const now = modeFromPath(location.pathname) === APP_MODES.PLAYER;
+    if (wasPlayer.current && !now) {
+      endSession();
+    }
+    wasPlayer.current = now;
+  }, [location.pathname, endSession]);
+
+  useEffect(() => {
+    const onUnload = () => {
+      if (isTauri()) invoke("clear_player_cache").catch(() => {});
+    };
+    window.addEventListener("beforeunload", onUnload);
+    return () => window.removeEventListener("beforeunload", onUnload);
+  }, []);
 
   return null;
 }
@@ -87,6 +117,7 @@ function App() {
           <PlayerSessionProvider>
             <BrowserRouter>
               <ModeBootstrap />
+              <PlayerSessionLifecycle />
               <AppShell maximized={maximized} setMaximized={setMaximized} />
             </BrowserRouter>
           </PlayerSessionProvider>

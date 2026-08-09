@@ -136,6 +136,19 @@ en YouTube en ventana privada, elige ese archivo en la sidebar y vuelve a buscar
 Ver docs/PHASE2_SETUP.md"
         );
     }
+    if trimmed.contains("rate-limited")
+        || trimmed.contains("rate limited")
+        || (trimmed.contains("isn't available, try again later")
+            && trimmed.contains("YouTube"))
+    {
+        let head = first_error_line(trimmed)
+            .unwrap_or("ERROR: YouTube rate limit");
+        return format!(
+            "{head}\n\n\
+YouTube ha limitado esta sesión (hasta ~1 hora). Espera un rato, evita lanzar varios \
+vídeos seguidos y vuelve a intentarlo. La app ahora añade pausas entre peticiones."
+        );
+    }
     if trimmed.contains("Sign in to confirm") || trimmed.contains("not a bot") {
         let head = first_error_line(trimmed).unwrap_or("ERROR: Sign in to confirm you're not a bot");
         return format!(
@@ -172,27 +185,65 @@ pub fn parse_config(config: DownloadConfig) -> Result<Vec<String>, String> {
         config.cookies_from_browser.as_deref(),
     )?;
 
+    let is_cache = config.purpose.as_deref() == Some("cache");
+    let is_keep = config.purpose.as_deref() == Some("keep");
+    let is_playlist = config.purpose.as_deref() == Some("playlist");
+    let is_merged_video = is_cache || is_keep || is_playlist;
+    let id_filename = is_cache || is_playlist;
+
+    // Do NOT sleep inside Player cache downloads: --sleep-interval runs before each
+    // stream (video+audio ⇒ 10–24s) and --sleep-requests pauses every extractor HTTP call.
+    // Inter-job pacing lives in queue::schedule_pending. Offline/bulk can still sleep.
+    if !is_cache {
+        // CLIP_HARBOUR_YT_SLEEP=soft|strict (default soft).
+        let sleep_mode = std::env::var("CLIP_HARBOUR_YT_SLEEP")
+            .unwrap_or_else(|_| "soft".into())
+            .to_ascii_lowercase();
+        let (sleep_requests, min_sleep, max_sleep) = if sleep_mode == "strict" {
+            ("1.5", "3", "8")
+        } else {
+            ("0.75", "1.5", "4")
+        };
+        args.push("--sleep-requests".to_string());
+        args.push(sleep_requests.to_string());
+        args.push("--min-sleep-interval".to_string());
+        args.push(min_sleep.to_string());
+        args.push("--max-sleep-interval".to_string());
+        args.push(max_sleep.to_string());
+    }
+
     if let Some(ffmpeg) = ffmpeg_location() {
         args.push("--ffmpeg-location".to_string());
         args.push(ffmpeg);
     }
 
+    // Regular audio downloads (USB BMW / Standard / PC / Player→audio): filename = song
+    // title only; artist goes into file tags. Player cache/keep/playlist keep id or full title.
+    let is_audio_download = !is_merged_video;
+
     if let Some(dir) = config.output_dir.filter(|x| !x.is_empty()) {
         args.push("-P".to_string());
         args.push(dir);
         args.push("-o".to_string());
-        if config.purpose.as_deref() == Some("cache") {
+        if id_filename {
+            // Stable id so we can prune/delete / resolve by video id.
             args.push("%(id)s.%(ext)s".to_string());
+        } else if is_audio_download {
+            // Prefer extractor track name; after parse-metadata, title is the song part.
+            args.push("%(track,title).200B.%(ext)s".to_string());
         } else {
             args.push("%(title).200B.%(ext)s".to_string());
         }
     }
 
-    let is_cache = config.purpose.as_deref() == Some("cache");
+    if is_audio_download {
+        append_audio_metadata_args(&mut args);
+    }
+
     if let Some(format) = config.format.filter(|x| !x.is_empty()) {
         args.push("-f".to_string());
         args.push(format);
-    } else if is_cache {
+    } else if is_merged_video {
         args.push("-f".to_string());
         args.push("bv*[height<=720]+ba/b".to_string());
     } else {
@@ -200,7 +251,7 @@ pub fn parse_config(config: DownloadConfig) -> Result<Vec<String>, String> {
         args.push("bestaudio/best".to_string());
     }
 
-    if is_cache {
+    if is_merged_video {
         args.push("--merge-output-format".to_string());
         args.push("mp4".to_string());
     }
@@ -212,7 +263,8 @@ pub fn parse_config(config: DownloadConfig) -> Result<Vec<String>, String> {
     if config.embed_subtitles == Some(true) {
         args.push("--embed-subs".to_string());
     }
-    if config.embed_metadata == Some(true) {
+    // Audio: always embed so the car / file browser sees artist + title tags.
+    if is_audio_download || config.embed_metadata == Some(true) {
         args.push("--embed-metadata".to_string());
     }
     if config.embed_thumbnail == Some(true) {
@@ -220,6 +272,56 @@ pub fn parse_config(config: DownloadConfig) -> Result<Vec<String>, String> {
     }
 
     Ok(args)
+}
+
+/// BMW / USB-friendly tags: filename = song title only; tags = title, artist, album.
+/// Parses YouTube "Artist - Title | Album" and strips [id] / Official / Visualizer fluff.
+fn append_audio_metadata_args(args: &mut Vec<String>) {
+    // 1) Artist - Title | Album (album optional).
+    args.push("--parse-metadata".to_string());
+    args.push(
+        r"title:^(?P<artist>.+?)\s*[-–—]\s*(?P<title>.+?)(?:\s*[\u007C\uFF5C/]\s*(?P<album>.+))?$"
+            .to_string(),
+    );
+    // 2) Title | Album when there was no "Artist - …" pattern.
+    args.push("--parse-metadata".to_string());
+    args.push(
+        r"title:^(?P<title>.+?)\s*[\u007C\uFF5C/]\s*(?P<album>.+)$".to_string(),
+    );
+    // 3) Prefer extractor artist, else uploader/channel (does not wipe a better artist).
+    args.push("--parse-metadata".to_string());
+    args.push(r"%(artist,uploader,channel)s:^(?P<artist>.+)$".to_string());
+    // 4) Keep album when the extractor already set one.
+    args.push("--parse-metadata".to_string());
+    args.push(r"%(album|)s:^(?P<album>.+)$".to_string());
+
+    // 5) Clean title / album / artist for car indexers (no YouTube id, no marketing tags).
+    let marketing = (
+        r"(?i)\s*[\(\[](?:official\s*)?(?:video|audio|visualizer|lyric\s*video|music\s*video|video oficial|audio oficial|official audio|official video|video visual|short film)[^\)\]]*[\)\]]",
+        "",
+    );
+    let youtube_id = (r"\s*\[[\w-]{11}\]\s*$", "");
+    let multi_space = (r"\s{2,}", " ");
+    let trim_ends = (r"^\s+|\s+$", "");
+    let prod_credit = (
+        r"(?i)\s*\((?:prod\.?\s*by|produced by|shot by|video by)[^)]*\)",
+        "",
+    );
+
+    for field in ["title", "album", "artist"] {
+        for (regex, replace) in [
+            marketing,
+            youtube_id,
+            prod_credit,
+            multi_space,
+            trim_ends,
+        ] {
+            args.push("--replace-in-metadata".to_string());
+            args.push(field.to_string());
+            args.push(regex.to_string());
+            args.push(replace.to_string());
+        }
+    }
 }
 
 pub fn download_has_cookies(config: &DownloadConfig) -> bool {
@@ -480,4 +582,63 @@ pub async fn get_url_details(
     })?;
 
     Ok(parse_video_details(video))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::DownloadConfig;
+
+    fn audio_config() -> DownloadConfig {
+        DownloadConfig {
+            url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ".into(),
+            title: "Artist - Song".into(),
+            output_dir: Some(r"C:\Music".into()),
+            output_ext: Some("m4a".into()),
+            format: None,
+            proxy_url: None,
+            embed_subtitles: Some(false),
+            embed_metadata: Some(false),
+            embed_thumbnail: Some(false),
+            duration_raw: None,
+            cookies_file: None,
+            cookies_from_browser: None,
+            purpose: None,
+        }
+    }
+
+    #[test]
+    fn audio_download_uses_title_filename_and_parses_artist() {
+        let args = parse_config(audio_config()).expect("args");
+        assert!(args.iter().any(|a| a == "%(track,title).200B.%(ext)s"));
+        assert!(args.iter().any(|a| a == "--embed-metadata"));
+        assert!(args.iter().any(|a| a == "--parse-metadata"));
+        let parse = args
+            .windows(2)
+            .find(|w| {
+                w[0] == "--parse-metadata"
+                    && w[1].contains("?P<artist>")
+                    && w[1].contains("?P<title>")
+                    && w[1].contains("?P<album>")
+            })
+            .map(|w| w[1].as_str());
+        assert!(
+            parse.is_some(),
+            "expected Artist - Title | Album parse rule"
+        );
+        assert!(
+            args.windows(2)
+                .any(|w| w[0] == "--replace-in-metadata" && w[1] == "title"),
+            "expected title cleanup rules"
+        );
+    }
+
+    #[test]
+    fn player_cache_keeps_id_filename_without_audio_parse() {
+        let mut cfg = audio_config();
+        cfg.purpose = Some("cache".into());
+        let args = parse_config(cfg).expect("args");
+        assert!(args.iter().any(|a| a == "%(id)s.%(ext)s"));
+        assert!(!args.iter().any(|a| a == "--parse-metadata"));
+    }
 }

@@ -15,7 +15,11 @@ import {
   removeSearchHistoryItem,
 } from "../../lib/search_history";
 
-export default function SearchBar({ setIsFocused, isFocused }) {
+/**
+ * @param {{ setIsFocused: (v: boolean) => void, isFocused: boolean, playerMode?: boolean }} props
+ * playerMode: never navigate to /val; URL → single result in place.
+ */
+export default function SearchBar({ setIsFocused, isFocused, playerMode = false }) {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState("");
   const [error, setError] = useState(null);
@@ -64,11 +68,31 @@ export default function SearchBar({ setIsFocused, isFocused }) {
 
     try {
       if (resolved.type === "url") {
+        const cookies = cookieInvokeArgs();
+        if (playerMode) {
+          clearBulkSelection();
+          beginReplaceSearch(resolved.url);
+          setSearchResults([{ title: SEARCH_LOADING_SENTINEL, uploader: "", duration: "" }]);
+          const videoDetails = await invoke("get_url_details", {
+            url: resolved.url,
+            ...cookies,
+          });
+          if (!stillCurrent()) return;
+          setSearchResults([
+            {
+              ...videoDetails,
+              url: videoDetails?.url || resolved.url,
+              title: videoDetails?.title || resolved.url,
+            },
+          ]);
+          setHistory(pushSearchHistory(value));
+          return;
+        }
+
         setSelectedVideo(null);
         setSearchResults(null);
         clearBulkSelection();
         navigate("/val");
-        const cookies = cookieInvokeArgs();
         const videoDetails = await invoke("get_url_details", {
           url: resolved.url,
           ...cookies,
@@ -98,7 +122,7 @@ export default function SearchBar({ setIsFocused, isFocused }) {
       setError(message);
       setSearchResults(null);
       setSelectedVideo(null);
-      navigate("/");
+      if (!playerMode) navigate("/");
     } finally {
       if (stillCurrent()) setBusy(false);
     }
@@ -109,8 +133,11 @@ export default function SearchBar({ setIsFocused, isFocused }) {
     setShowHistory(true);
   }
 
+  /** Fill the field only — search runs on Enter / button. */
   function handlePickHistory(query) {
-    void runSearch(query);
+    setSearchValue(query);
+    setShowHistory(false);
+    setError(null);
   }
 
   function handleClearHistory() {
@@ -149,7 +176,16 @@ export default function SearchBar({ setIsFocused, isFocused }) {
       e.dataTransfer.getData("text/plain") ||
       "";
     const first = String(text).split(/\r?\n/).find((line) => line && !line.startsWith("#"));
-    if (first) void runSearch(first.trim());
+    if (first) {
+      setSearchValue(first.trim());
+      setShowHistory(false);
+      setError(null);
+    }
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    void runSearch(searchValue);
   }
 
   return (
@@ -165,12 +201,16 @@ export default function SearchBar({ setIsFocused, isFocused }) {
         }
       }}
     >
-      <div className="flex items-stretch overflow-hidden rounded-xl border border-black bg-white focus-within:ring-1 focus-within:ring-black transition-[box-shadow] duration-200">
+      <form
+        className={`flex items-stretch overflow-hidden rounded-xl border border-black bg-white focus-within:ring-1 focus-within:ring-black transition-[width,box-shadow] duration-200 max-w-full ${
+          isFocused ? "w-96" : "w-80"
+        }`}
+        onSubmit={handleSubmit}
+      >
         <input
           id="search"
           value={searchValue}
           onKeyDown={(e) => {
-            if (e.key === "Enter") void runSearch(searchValue);
             if (e.key === "Escape") setShowHistory(false);
           }}
           onChange={(e) => {
@@ -182,15 +222,15 @@ export default function SearchBar({ setIsFocused, isFocused }) {
           onFocus={openHistory}
           type="text"
           autoComplete="off"
-          className={`text-black font-light text-sm bg-transparent border-0 outline-none focus:ring-0 px-4 h-11 transition-all duration-300 ${
-            isFocused ? "min-w-[28rem]" : "min-w-[20rem]"
-          }`}
+          name="q"
+          enterKeyHint="search"
+          className="min-w-0 flex-1 text-black font-light text-sm bg-transparent border-0 outline-none focus:ring-0 px-4 h-11"
           placeholder={t("search.placeholder")}
         />
         <button
-          className="min-w-11 shrink-0 h-11 w-11 flex items-center justify-center border-0 border-l border-black bg-black text-white hover:bg-[#222] active:bg-[#111] transition-colors duration-150"
-          onClick={() => void runSearch(searchValue)}
-          type="button"
+          className="shrink-0 h-11 w-11 flex items-center justify-center border-0 border-l border-black bg-black text-white hover:bg-[#222] active:bg-[#111] transition-colors duration-150"
+          type="submit"
+          disabled={busy}
           aria-label={busy ? t("search.busy") : t("search.button")}
           title={busy ? t("search.busy") : t("search.button")}
         >
@@ -202,7 +242,7 @@ export default function SearchBar({ setIsFocused, isFocused }) {
             </span>
           )}
         </button>
-      </div>
+      </form>
 
       {historyVisible ? (
         <div

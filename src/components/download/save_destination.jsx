@@ -5,7 +5,14 @@ import { openPath } from "@tauri-apps/plugin-opener";
 import { DownloadPathContext } from "../../providers/download_path_context";
 import { isTauri } from "../../lib/tauri_env";
 
-export default function FolderPicker() {
+/**
+ * Download / audio destination picker.
+ * @param {{ titleKey?: string, dialogTitleKey?: string }} props
+ */
+export default function FolderPicker({
+  titleKey = "sidebar.setFolder",
+  dialogTitleKey = "folder.dialogTitle",
+} = {}) {
   const { t } = useTranslation();
   const { downloadPath, setDownloadPath } = useContext(DownloadPathContext);
   const [openPanel, setOpenPanel] = useState(false);
@@ -15,7 +22,7 @@ export default function FolderPicker() {
       const folder = await open({
         directory: true,
         multiple: false,
-        title: t("folder.dialogTitle"),
+        title: t(dialogTitleKey),
       });
       if (folder) {
         setDownloadPath(folder);
@@ -43,22 +50,22 @@ export default function FolderPicker() {
   }
 
   return (
-    <div className="pl-1 text-xs space-y-1">
-      <div className="flex items-center gap-2 min-w-0">
+    <div className="pl-1 text-xs space-y-1 leading-5">
+      <div className="flex items-center gap-2 min-w-0 py-0.5">
         <button
           type="button"
-          className="min-w-0 flex-1 text-left text-sm font-medium flex items-center gap-1 hover:underline"
+          className="min-w-0 flex-1 text-left text-sm font-medium leading-5 flex items-center gap-1 hover:underline"
           aria-expanded={openPanel}
           onClick={() => setOpenPanel((v) => !v)}
         >
           <span className="text-[10px] leading-none select-none w-3 shrink-0" aria-hidden>
             {openPanel ? "▾" : "▸"}
           </span>
-          <span className="truncate">{t("sidebar.setFolder")}</span>
+          <span className="truncate">{t(titleKey)}</span>
         </button>
         <button
           type="button"
-          className="shrink-0 text-xs font-normal hover:underline"
+          className="shrink-0 text-xs font-normal leading-5 hover:underline"
           onClick={openDownloadFolder}
         >
           {t("sidebar.openFolder")}

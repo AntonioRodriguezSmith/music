@@ -2,6 +2,20 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-07 — P10 Player rate-limit + listas UX
+
+- **P10a:** `CLIP_HARBOUR_YT_SLEEP=soft\|strict`, gap cola 4/8 s, banner rate-limit, prefetch opt-in.
+- **P10b:** reconcile disco, `.archive.txt`, estados offline/guardando/pendiente.
+- **P10c:** crear lista inline, menú ⋯ rename/vaciar/borrar, badge preparación.
+- **P10d:** import YouTube `list=` — parking (no implementado).
+- **Docs:** [PLAYER_PLAYLISTS.md](./PLAYER_PLAYLISTS.md).
+
+## 2026-07 — Player playlists offline + docs
+
+- **Playlists:** multi-lista (`names` + slug), carpeta `playlists/<slug>/`, offline al Añadir, `promote_to_playlist`, play sin auto-add.
+- **Rate-limit:** 1 job paralelo, sleeps yt-dlp, gap cola, mensaje de error amigable.
+- **Docs:** [PLAYER_PLAYLISTS.md](./PLAYER_PLAYLISTS.md).
+
 ## 2026-07 — Phase 4 Player MVP (P0–P9)
 
 - **Mode:** titlebar toggle Descarga|Player; route `/player` — search, playlist, cache play ≤720p, Descargar audio.

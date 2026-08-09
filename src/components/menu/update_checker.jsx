@@ -62,10 +62,10 @@ export default function UpdateChecker({ compact = false }) {
   if (!isTauri()) return null;
 
   return (
-    <div className={`text-xs space-y-1 ${compact ? "" : "mt-2"}`}>
+    <div className="text-xs space-y-1 leading-5">
       <button
         type="button"
-        className="w-full text-left hover:underline disabled:opacity-50"
+        className="w-full text-left leading-5 py-0.5 hover:underline disabled:opacity-50"
         disabled={busy}
         onClick={() => void handleCheck()}
       >

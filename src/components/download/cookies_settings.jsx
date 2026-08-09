@@ -53,10 +53,10 @@ export default function CookiesSettings() {
   }
 
   return (
-    <div className="mt-2 pl-1 text-xs space-y-1">
+    <div className="pl-1 text-xs space-y-1 leading-5">
       <button
         type="button"
-        className="w-full text-left text-sm font-medium flex items-center gap-1 hover:underline"
+        className="w-full text-left text-sm font-medium leading-5 flex items-center gap-1 py-0.5 hover:underline"
         aria-expanded={openPanel}
         onClick={() => setOpenPanel((v) => !v)}
       >

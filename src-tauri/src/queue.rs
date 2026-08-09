@@ -217,6 +217,12 @@ async fn take_next_pending(app: &tauri::AppHandle) -> Option<(usize, DownloadCon
 
 fn schedule_pending(app: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
+        // Gap between queued jobs only (not before the first). soft=2s, strict=4s.
+        let sleep_mode = std::env::var("CLIP_HARBOUR_YT_SLEEP")
+            .unwrap_or_else(|_| "soft".into())
+            .to_ascii_lowercase();
+        let gap_secs = if sleep_mode == "strict" { 4 } else { 2 };
+        sleep(Duration::from_secs(gap_secs)).await;
         if let Some((process_id, config)) = take_next_pending(&app).await {
             run_download(app, process_id, config).await;
         }
@@ -450,6 +456,13 @@ async fn run_download(app: tauri::AppHandle, process_id: usize, config: Download
         let state = app_state(&app);
         let download_registry = state.download_registry.lock().await;
         download_registry.get(&process_id).and_then(|download| {
+            // Player cache/keep: yt-dlp already merges (--merge-output-format); never re-encode.
+            if matches!(
+                config.purpose.as_deref(),
+                Some("cache") | Some("keep") | Some("playlist")
+            ) {
+                return None;
+            }
             let output_ext = config.output_ext.as_ref()?;
             if download.status != "downloaded" {
                 return None;
@@ -521,6 +534,16 @@ fn ffmpeg_convert_args(input_path: &str, output_path: &str) -> Vec<String> {
         _ => {}
     }
 
+    // Keep yt-dlp --embed-metadata tags (title / artist / album) through re-encode.
+    // map_metadata copies into MP4 atoms (M4A) / ID3 (MP3) that BMW iDrive indexes.
+    args.push("-map_metadata".to_string());
+    args.push("0".to_string());
+    if matches!(ext.as_str(), "mp3") {
+        args.push("-id3v2_version".to_string());
+        args.push("3".to_string());
+        args.push("-write_id3v1".to_string());
+        args.push("1".to_string());
+    }
     args.push(output_path.to_string());
     args.push("-progress".to_string());
     args.push("pipe:1".to_string());

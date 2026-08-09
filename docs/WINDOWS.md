@@ -2,7 +2,8 @@
 
 This fork adds **Windows support** for [Clip Harbour](https://github.com/amansxcalibur/clip_harbour) (Tauri 2 + yt-dlp). Upstream GitHub releases remain **Linux-oriented**. **This fork** ships Windows packages: [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) (MSI / NSIS / portable). Portable install notes: [PORTABLE_README.txt](./PORTABLE_README.txt). Setup: [PHASE3_SETUP.md](./PHASE3_SETUP.md).
 
-Docs for this stack: [Tauri 2](https://v2.tauri.app/) (not [Tauri 1](https://v1.tauri.app/)).
+Docs for this stack: [Tauri 2](https://v2.tauri.app/) (not [Tauri 1](https://v1.tauri.app/)).  
+Índice de URLs (v1 setup + v2 canónico): [TAURI_URLS.md](./TAURI_URLS.md).
 
 ## Quick start (Windows)
 

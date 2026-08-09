@@ -85,7 +85,7 @@ export function buildQueueSnapshot(configs, downloads = {}) {
   const items = [];
   for (const [id, config] of entries) {
     if (!config?.url) continue;
-    if (config.purpose === "cache") continue;
+    if (config.purpose === "cache" || config.purpose === "playlist") continue;
     const d = downloads[id] || downloads[String(id)];
     const status = d?.status || "queued";
     if (status === "finished" || status === "cancelled" || String(status).startsWith("error")) {
