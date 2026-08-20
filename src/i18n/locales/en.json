@@ -187,7 +187,8 @@
     "chooseFile": "Choose cookies.txt",
     "clearFile": "Clear file",
     "dialogTitle": "Select cookies.txt (Netscape format)",
-    "filterName": "Cookies"
+    "filterName": "Cookies",
+    "refreshFailed": "Could not refresh cookies from Firefox. Use Choose cookies.txt."
   },
   "formats": {
     "page": "{{page}} / {{total}}",

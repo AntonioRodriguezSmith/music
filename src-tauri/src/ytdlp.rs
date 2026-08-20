@@ -99,14 +99,289 @@ pub fn append_cookie_args(
         if !std::path::Path::new(&path).is_file() {
             return Err(format!("Cookies file not found: {path}"));
         }
+        // yt-dlp rejects files saved with a UTF-8 BOM; strip it on a copy when
+        // needed so exports straight from an extension keep working.
+        let usable = sanitize_cookie_path(&path)?;
         args.push("--cookies".to_string());
-        args.push(path);
+        args.push(usable);
     }
     if let Some(browser) = browser {
         args.push("--cookies-from-browser".to_string());
         args.push(browser);
     }
     Ok(())
+}
+
+/// Detect a UTF-8 BOM (EF BB BF) on the first bytes of a file.
+fn has_utf8_bom(path: &std::path::Path) -> bool {
+    use std::io::Read;
+    if let Ok(mut f) = std::fs::File::open(path) {
+        let mut buf = [0u8; 3];
+        if f.read_exact(&mut buf).is_ok() {
+            return buf == [0xEF, 0xBB, 0xBF];
+        }
+    }
+    false
+}
+
+/// Return a path usable by yt-dlp, copying the file without its BOM if present.
+/// Creates a sibling `<name>.nobom.txt` so the original export stays untouched.
+fn sanitize_cookie_path(path: &str) -> Result<String, String> {
+    let p = std::path::Path::new(path);
+    if !has_utf8_bom(p) {
+        return Ok(path.to_string());
+    }
+    let data = std::fs::read(p).map_err(|e| format!("read cookies {path}: {e}"))?;
+    let body = data
+        .get(3..)
+        .unwrap_or(&data)
+        .to_vec();
+    let dir = p.parent().unwrap_or_else(|| std::path::Path::new("."));
+    let file_name = p
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("cookies");
+    let clean = dir.join(format!("{file_name}.nobom.txt"));
+    std::fs::write(&clean, &body).map_err(|e| format!("write clean cookies {}: {e}", clean.display()))?;
+    eprintln!("stripped UTF-8 BOM from {} -> {}", path, clean.display());
+    Ok(clean.to_string_lossy().into_owned())
+}
+
+/// Resolve the cookies directory: an explicit `dir` argument (if any), else the
+/// well-known per-user `%USERPROFILE%\cookies_youtube` folder, else
+/// `CLIP_HARBOUR_COOKIES_DIR`. Shared by `list_cookie_candidates` and the
+/// auto-refresh command so reading and writing always agree on the same folder.
+fn resolve_cookies_dir(dir: Option<&str>) -> Result<String, String> {
+    dir.map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| {
+            let mut home = std::env::var("USERPROFILE")
+                .or_else(|_| std::env::var("HOME"))
+                .ok()?;
+            home.push_str("\\cookies_youtube");
+            Some(home)
+        })
+        .or_else(|| std::env::var("CLIP_HARBOUR_COOKIES_DIR").ok())
+        .ok_or_else(|| "No cookies directory to scan".to_string())
+}
+
+/// Scan a directory for candidate `cookies.txt` Netscape files.
+/// Directory defaults to the well-known per-user `cookies_youtube` folder,
+/// overridable via `CLIP_HARBOUR_COOKIES_DIR`.
+///
+/// Files saved with a UTF-8 BOM are still returned (they are automatically
+/// stripped of the BOM when used; see `sanitize_cookie_path`). Ordered so the
+/// most likely filenames ("cookies_merged", "cookies_chrome", …) come first.
+#[tauri::command]
+pub fn list_cookie_candidates(
+    dir: Option<String>,
+) -> Result<Vec<String>, String> {
+    let root = resolve_cookies_dir(dir.as_deref())?;
+
+    if !std::path::Path::new(&root).is_dir() {
+        return Ok(vec![]);
+    }
+
+    let mut candidates = vec![];
+    let entries =
+        std::fs::read_dir(&root).map_err(|e| format!("read dir {root}: {e}"))?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(ext) = path.extension().map(|e| e.to_string_lossy().to_ascii_lowercase())
+        else {
+            continue;
+        };
+        if ext != "txt" {
+            continue;
+        }
+        if let Some(name) = entry.file_name().to_str() {
+            candidates.push(name.to_string());
+        }
+    }
+    let score = |name: &str| -> i32 {
+        let lower = name.to_ascii_lowercase();
+        if lower.starts_with("cookies_merged") {
+            0
+        } else if lower.starts_with("cookies_chrome")
+            || lower.starts_with("cookies_edge")
+            || lower.starts_with("cookies_firefox")
+            || lower.starts_with("cookies.txt")
+        {
+            1
+        } else if lower.contains("youtube") {
+            2
+        } else {
+            3
+        }
+    };
+    candidates.sort_by_key(|n| (score(n), n.clone()));
+
+    let trimmed = root.trim_end_matches('\\');
+    Ok(candidates
+        .into_iter()
+        .map(|name| format!("{trimmed}\\{name}"))
+        .collect())
+}
+
+/// Returns true when `domain` belongs to YouTube / Google, mirroring the filter
+/// used by `scripts/filter-youtube-cookies.ps1`.
+fn is_youtube_domain(domain: &str) -> bool {
+    let d = domain.to_ascii_lowercase();
+    d.contains("youtube")
+        || d.contains("google")
+        || d.contains("googlevideo")
+        || d.contains("ytimg")
+        || d.contains("ggpht")
+        || d.contains("gstatic")
+}
+
+/// Parse a line of a Netscape HTTP cookie file, returning `(domain, path,
+/// name, expiry, normalized_line)` if the entry is well-formed and belongs to a
+/// YouTube/Google domain. Mirrors `filter-youtube-cookies.ps1` (line fields:
+/// domain, flag, path, secure, expiry, name, value).
+fn parse_cookie_line(line: &str) -> Option<(String, String, String, i64, String)> {
+    // Strip a UTF-8 BOM on the very first field if present.
+    let line = line.strip_prefix('\u{FEFF}').unwrap_or(line);
+    if line.trim().is_empty() || line.trim_start().starts_with('#') {
+        return None;
+    }
+    let parts: Vec<&str> = line.splitn(7, '\t').collect();
+    if parts.len() < 7 {
+        return None;
+    }
+    let domain = parts[0].trim();
+    if domain.is_empty() || !is_youtube_domain(domain) {
+        return None;
+    }
+    let name = parts[5].trim();
+    let value = parts[6].trim();
+    if name.is_empty() || value.is_empty() {
+        return None;
+    }
+    let mut flag = parts[1].trim().to_ascii_uppercase();
+    let path = parts[2].trim().to_string();
+    let mut secure = parts[3].trim().to_ascii_uppercase();
+    let expiry = parts[4].trim().parse::<i64>().unwrap_or(0i64);
+
+    // Netscape / yt-dlp: a leading "." on the domain requires flag TRUE.
+    if domain.starts_with('.') {
+        flag = "TRUE".to_string();
+    } else if flag != "TRUE" && flag != "FALSE" {
+        flag = "FALSE".to_string();
+    }
+    if secure != "TRUE" && secure != "FALSE" {
+        secure = "FALSE".to_string();
+    }
+
+    let normalized = format!(
+        "{}\t{}\t{}\t{}\t{}\t{}\t{}",
+        domain, flag, path, secure, expiry, name, value
+    );
+    Some((domain.to_string(), path, name.to_string(), expiry, normalized))
+}
+
+/// Port of `scripts/filter-youtube-cookies.ps1`: read `raw_path`, keep only
+/// YouTube/Google cookies, dedupe by `domain\tpath\tname` keeping the latest
+/// expiry, and write a UTF-8 (no BOM) Netscape file at `out_path`. Returns the
+/// number of cookies written. Falls back (no write) when none are kept.
+fn enrich_cookies(raw_path: &str, out_path: &str) -> Result<usize, String> {
+    use std::collections::HashMap;
+
+    let content =
+        std::fs::read_to_string(raw_path).map_err(|e| format!("read raw cookies: {e}"))?;
+
+    let mut by_key: HashMap<String, (i64, String)> = HashMap::new();
+    for line in content.lines() {
+        if let Some((domain, path, name, expiry, normalized)) = parse_cookie_line(line) {
+            let key = format!("{domain}\t{path}\t{name}");
+            match by_key.get(&key) {
+                Some((existing_expiry, _)) if *existing_expiry > expiry => {}
+                _ => {
+                    by_key.insert(key, (expiry, normalized));
+                }
+            }
+        }
+    }
+
+    if by_key.is_empty() {
+        return Err(
+            "No YouTube/Google cookies kept. FireFox sin sesión? Inicia sesión en YouTube y reintenta.".to_string(),
+        );
+    }
+
+    let mut lines: Vec<String> = vec![];
+    lines.push("# Netscape HTTP Cookie File".to_string());
+    lines.push(
+        "# Auto-extracted and enriched for Clip Harbour / yt-dlp (YouTube + Google). UTF-8 no BOM."
+            .to_string(),
+    );
+    lines.push(format!("# Source browser: Firefox (via --cookies-from-browser)"));
+    let mut entries: Vec<&String> = by_key.values().map(|(_, l)| l).collect();
+    entries.sort();
+    lines.extend(entries.into_iter().cloned());
+
+    std::fs::write(out_path, lines.join("\n"))
+        .map_err(|e| format!("write merged cookies {out_path}: {e}"))?;
+    Ok(by_key.len())
+}
+
+/// Auto-refresh cookies from the browser (default Firefox) and enrich them into
+/// `cookies_merged.txt`. Returns the absolute path of the refreshed file, or an
+/// error that lets the caller keep using a previously saved cookies file.
+///
+/// Extraction uses `yt-dlp --cookies-from-browser <browser> --cookies <tmp>`
+/// *without a URL*: this dumps the browser jar into a file but exits non-zero
+/// ("You must provide at least one URL"), so the exit status is ignored and the
+/// result is validated by the file content. The temp path is deleted first
+/// because yt-dlp does not overwrite an existing --cookies target.
+#[tauri::command(rename_all = "snake_case")]
+pub async fn refresh_cookies(
+    app: tauri::AppHandle,
+    browser: Option<String>,
+) -> Result<String, String> {
+    let browser = browser.filter(|b| !b.is_empty()).unwrap_or_else(|| "firefox".to_string());
+    let dir = resolve_cookies_dir(None)?;
+    let dir_path = std::path::Path::new(&dir);
+    if !dir_path.is_dir() {
+        return Err(format!("Carpeta de cookies no encontrada: {dir}"));
+    }
+
+    let tmp = dir_path.join("cookies_raw.txt");
+    let _ = std::fs::remove_file(&tmp);
+
+    let tmp_str = tmp.to_string_lossy().into_owned();
+    let extracted = app
+        .shell()
+        .sidecar("yt-dlp")
+        .map_err(|e| format!("yt-dlp sidecar: {e}"))?
+        .args(["--cookies-from-browser", &browser, "--cookies", &tmp_str])
+        .output()
+        .await;
+
+    // Exit status is unreliable (non-zero even on success); validate the file.
+    if extracted.is_err() && !tmp.is_file() {
+        return Err(format!(
+            "No se pudo extraer cookies del navegador ({browser}). Verifica que Firefox esté instalado."
+        ));
+    }
+    if !tmp.is_file() {
+        return Err(
+            "No se pudo extraer cookies del navegador. Revisa la consola o usa el panel de cookies."
+                .to_string(),
+        );
+    }
+
+    let out = dir_path.join("cookies_merged.txt");
+    let out_str = out.to_string_lossy().into_owned();
+    let count = enrich_cookies(&tmp_str, &out_str)?;
+    let _ = std::fs::remove_file(&tmp);
+
+    eprintln!("refresh_cookies: wrote {count} cookies to {out_str}");
+    Ok(out_str)
 }
 
 fn first_error_line(stderr: &str) -> Option<&str> {
@@ -640,5 +915,45 @@ mod tests {
         let args = parse_config(cfg).expect("args");
         assert!(args.iter().any(|a| a == "%(id)s.%(ext)s"));
         assert!(!args.iter().any(|a| a == "--parse-metadata"));
+    }
+
+    #[test]
+    fn enrich_filters_and_dedupes_youtube_cookies() {
+        // Raw cookie lines in Netscape format (domain, flag, path, secure, expiry, name, value).
+        let raw = [
+            "# Netscape HTTP Cookie File",
+            ".youtube.com\tTRUE\t/\tTRUE\t1750000000\tSID\tabc123",
+            ".youtube.com\tTRUE\t/\tTRUE\t9999999999\tSID\tabc123", // newer expiry for same key
+            ".google.com\tTRUE\t/\tTRUE\t1750000000\tNID\tsomeval",
+            ".example.com\tTRUE\t/\tTRUE\t1750000000\tNOTY\tkeepme", // non-YT -> dropped
+            "",
+        ]
+        .join("\n");
+
+        let tmp_dir = std::env::temp_dir();
+        let in_path = tmp_dir.join("clip_harbour_test_raw.txt");
+        let out_path = tmp_dir.join("clip_harbour_test_merged.txt");
+        std::fs::write(&in_path, &raw).expect("write raw");
+
+        let count = enrich_cookies(&in_path.to_str().unwrap(), &out_path.to_str().unwrap())
+            .expect("enrich");
+        assert_eq!(count, 2, "two unique YT/Google cookies after dedupe");
+
+        let written = std::fs::read_to_string(&out_path).expect("read merged");
+        assert!(!written.as_bytes().starts_with(&[0xEF, 0xBB, 0xBF]), "no BOM");
+        assert!(!written.contains(".example.com"), "non-YT dropped");
+        // Dedupe kept the newer expiry line.
+        assert!(written.contains("9999999999"), "kept latest expiry");
+
+        let _ = std::fs::remove_file(&in_path);
+        let _ = std::fs::remove_file(&out_path);
+    }
+
+    #[test]
+    fn parse_cookie_line_normalizes_flags_and_detects_bom() {
+        // Field with a leading UTF-8 BOM is stripped on the first field.
+        let with_bom = format!("\u{FEFF}.youtube.com\tx\t/\tX\t0\tname\tvalue");
+        let parsed = parse_cookie_line(&with_bom).expect("parse with BOM");
+        assert_eq!(parsed.4, ".youtube.com\tTRUE\t/\tFALSE\t0\tname\tvalue");
     }
 }

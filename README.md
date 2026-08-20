@@ -17,7 +17,6 @@ Mira el [vídeo de demostración](https://www.youtube.com/watch?v=VYv4jSYCPak).
 
 - [Motivación](#motivación)
 - [Funciones](#funciones)
-- [Player (Fase 4)](#player-fase-4)
 - [Uso](#uso)
 - [Desarrollo](#configuración-de-desarrollo)
 - [Windows](#desarrollo-en-windows)
@@ -58,22 +57,12 @@ Existen otros frontends como [ezytdl](https://github.com/sylviiu/ezytdl) o [yout
   * Estadísticas de progreso: velocidad, ETA, tamaño, bytes descargados, etc.
   * Incrustar miniaturas y subtítulos en el fichero.
   * Notas del fork: [docs/PHASE3.md](docs/PHASE3.md), [docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md), [docs/WINDOWS.md](docs/WINDOWS.md), [docs/CHANGELOG_FORK.md](docs/CHANGELOG_FORK.md), [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
-
-## Player (Fase 4)
-
-El fork incluye un **modo Player** (siempre el mismo `.exe`, dos vistas): la vista **Descarga** intacta y una vista **Player** ligera para reproducir y gestionar música. Estado actual: **MVP (Fase 4) en el repo**, integrado en la rama `main`.
-
-- **Cambio de modo y ruta** — botón en la titlebar y ruta `/player`; la sidebar se vuelve compacta al entrar.
-- **Búsqueda en modo Player** — busca sin pasar por la pantalla de descarga; click reproduce o añade a la lista (nunca abre `/val`).
-- **Cache de reproducción** — descarga/merge ≤720p en el directorio del player (override `CLIP_HARBOUR_PLAYER_DIR`), LRU purge y prefetch; se reproduce desde el fichero cacheado.
-- **Playlists offline** — listas locales (`localStorage`) y en disco bajo `playlists/<slug>/`; crear/renombrar/vaciar/borrar; estados offline/guardando/pendiente.
-- **Descargar audio** — CTA que encola `bestaudio` en la cola compartida y lo registra en el historial.
-- **Rate-limit de YouTube** — 1 job paralelo, `CLIP_HARBOUR_YT_SLEEP=soft|strict` con gaps de cola y banner de rate-limit.
-
-Detalles: [docs/PHASE4.md](docs/PHASE4.md) · [SPEC](docs/phase4/SPEC.md) · [SETUP](docs/PHASE4_SETUP.md) · [PLAYER_PLAYLISTS](docs/PLAYER_PLAYLISTS.md).
+  * Desarrollo aparte (no publicado): modo Player Fase 4 en [docs/DEV_PHASE4.md](docs/DEV_PHASE4.md).
 
 ## Uso
 **Este fork (Windows):** descarga [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) — MSI, instalador NSIS o ZIP portable ([instrucciones](docs/PORTABLE_README.txt)). Authenticode no incluido (uso personal); detalle en [docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md).
+
+> La release **v0.1.0** corresponde a la **Fase 3** (vista **Descarga**). En producción solo hay hasta la Fase 3. El modo Player (Fase 4) es un desarrollo aparte **aún no publicado**: ver [docs/DEV_PHASE4.md](docs/DEV_PHASE4.md).
 
 Upstream (Linux y builds originales): [releases de clip_harbour](https://github.com/amansxcalibur/clip_harbour/releases). Las versiones con sufijo `_python` requieren Python.
 

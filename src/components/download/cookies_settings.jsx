@@ -12,10 +12,54 @@ export default function CookiesSettings() {
   const [file, setFile] = useState(() => loadCookiePrefs().cookiesFile);
   const [openPanel, setOpenPanel] = useState(false);
   const [ytdlpVersion, setYtdlpVersion] = useState("");
+  const [refreshMsg, setRefreshMsg] = useState("");
 
   useEffect(() => {
     // Ensure legacy browser key is cleared (file-only prefs).
     loadCookiePrefs();
+  }, []);
+
+  // Auto-refresh cookies from the browser (default Firefox) on startup and
+  // enrich them into cookies_merged.txt. Non-blocking: the panel only updates
+  // when the command resolves. Falls back silently to the existing file.
+  useEffect(() => {
+    if (!isTauri()) return undefined;
+    let cancelled = false;
+    invoke("refresh_cookies")
+      .then((path) => {
+        if (cancelled || !path) return;
+        setFile(path);
+        persistFile(path);
+        setRefreshMsg("");
+      })
+      .catch(() => {
+        if (!cancelled) setRefreshMsg(t("cookies.refreshFailed"));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Auto-profile cookies on startup: if nothing is configured yet, scan the
+  // default cookies_youtube folder (C:\Users\<user>\cookies_youtube) and pick
+  // the first .txt, persisting it so it survives restarts.
+  useEffect(() => {
+    if (!isTauri() || loadCookiePrefs().cookiesFile) return undefined;
+    let cancelled = false;
+    invoke("list_cookie_candidates")
+      .then((files) => {
+        if (cancelled || !Array.isArray(files) || files.length === 0) return;
+        const preferred = files.find(
+          (f) => /cookies\.txt$/i.test(f) || /cookies_(merged|chrome|edge|firefox)\.txt$/i.test(f),
+        );
+        const picked = preferred || files[0];
+        setFile(picked);
+        persistFile(picked);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -68,6 +112,9 @@ export default function CookiesSettings() {
       {openPanel ? (
         <>
           <p className="text-[10px] text-gray-600 leading-snug">{t("cookies.hint")}</p>
+          {refreshMsg ? (
+            <p className="text-[10px] text-red-600 leading-snug">{refreshMsg}</p>
+          ) : null}
           <div>
             <p className="text-[10px] break-all">
               {t("cookies.file", { path: file || t("cookies.noFile") })}

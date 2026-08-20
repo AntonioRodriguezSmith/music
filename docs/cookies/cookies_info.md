@@ -93,6 +93,8 @@ El desplegable “Desde el navegador” está **oculto** en Fase 2. Para forzarl
 2. Configúralas en la sidebar.
 3. Actualiza yt-dlp si el error persiste.
 
+> **Auto-refresh (desde este fork):** si usas la app con Firefox con sesión iniciada en YouTube, al arrancar la app genera automáticamente `cookies_merged.txt` (filtradas solo para YouTube/Google, dedupe y UTF-8 sin BOM) y lo selecciona. Si el error 403 persiste tras el arranque, prueba a cerrar/reabrir la app o iniciar sesión de nuevo en Firefox.
+
 En descargas, Fase 2 reintenta automáticamente 403 hasta 2 veces si hay cookies configuradas.
 
 ### “This content isn't available, try again later”

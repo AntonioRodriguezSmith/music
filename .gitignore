@@ -51,6 +51,10 @@ src-tauri/binaries/*.exe
 # Cargo (prefer CARGO_TARGET_DIR under %LOCALAPPDATA% via dev-windows.ps1)
 src-tauri/target/
 src-tauri/.cargo/config.toml
+# Build output dir produced by dev-windows.ps1 under %LOCALAPPDATA%\clip_harbour-target
+src-tauri/%LOCALAPPDATA%/
+**/%LOCALAPPDATA%/
+%LOCALAPPDATA%/
 
 # Unrelated local trees (not part of Clip Harbour)
 web/

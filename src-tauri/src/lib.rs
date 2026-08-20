@@ -1,4 +1,5 @@
 mod models;
+#[cfg(debug_assertions)]
 mod player_cache;
 mod queue;
 mod state;
@@ -12,6 +13,7 @@ use tauri::{Manager, PhysicalPosition, PhysicalSize, Position, Size};
 use tauri_plugin_shell::process::CommandChild;
 
 use models::Download;
+#[cfg(debug_assertions)]
 use player_cache::{
     append_playlist_archive, clear_player_cache, clear_playlist_media, delete_player_cache_file,
     delete_playlist_dir, delete_playlist_file, list_playlist_video_ids, player_cache_dir,
@@ -22,7 +24,9 @@ use queue::{
     clear_finished_downloads, pause_download, resume_download, start_download, stop_download,
 };
 use state::AppState;
-use ytdlp::{get_top_search, get_url_details, get_ytdlp_version};
+use ytdlp::{
+    get_top_search, get_url_details, get_ytdlp_version, list_cookie_candidates, refresh_cookies,
+};
 
 /// Open at 75% of the current monitor, centered (not maximized/fullscreen).
 fn size_main_window_to_monitor(app: &tauri::App) {
@@ -45,7 +49,7 @@ fn size_main_window_to_monitor(app: &tauri::App) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .setup(|app| {
             app.manage(AppState {
                 process_registry: Arc::new(std::sync::Mutex::new(HashMap::<usize, CommandChild>::new())),
@@ -71,28 +75,41 @@ pub fn run() {
             resume_download,
             clear_finished_downloads,
             get_ytdlp_version,
-            player_cache_dir,
-            player_keep_dir,
-            playlist_dir,
-            resolve_playlist_file,
-            list_playlist_video_ids,
-            clear_playlist_media,
-            append_playlist_archive,
-            promote_to_playlist,
-            delete_playlist_file,
-            delete_playlist_dir,
-            rename_playlist_dir,
-            purge_player_cache,
-            clear_player_cache,
-            prune_player_cache,
-            delete_player_cache_file,
-            resolve_player_cache_file,
-        ])
+            list_cookie_candidates,
+            refresh_cookies,
+        ]);
+
+    #[cfg(debug_assertions)]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        player_cache_dir,
+        player_keep_dir,
+        playlist_dir,
+        resolve_playlist_file,
+        list_playlist_video_ids,
+        clear_playlist_media,
+        append_playlist_archive,
+        promote_to_playlist,
+        delete_playlist_file,
+        delete_playlist_dir,
+        rename_playlist_dir,
+        purge_player_cache,
+        clear_player_cache,
+        prune_player_cache,
+        delete_player_cache_file,
+        resolve_player_cache_file,
+    ]);
+
+    let app = builder
         .build(tauri::generate_context!())
-        .expect("error while building tauri application")
-        .run(|_app, event| {
-            if let tauri::RunEvent::Exit = event {
-                let _ = clear_player_cache();
-            }
-        });
+        .expect("error while building tauri application");
+
+    #[cfg(debug_assertions)]
+    app.run(|_app, event| {
+        if let tauri::RunEvent::Exit = event {
+            let _ = clear_player_cache();
+        }
+    });
+
+    #[cfg(not(debug_assertions))]
+    app.run(|_app, _event| {});
 }

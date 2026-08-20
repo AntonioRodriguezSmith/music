@@ -28,6 +28,7 @@ import {
 } from "./lib/app_mode";
 import { invoke } from "@tauri-apps/api/core";
 import { isTauri } from "./lib/tauri_env";
+import { PLAYER_ENABLED } from "./lib/feature_flags";
 
 function ModeBootstrap() {
   const navigate = useNavigate();
@@ -37,7 +38,11 @@ function ModeBootstrap() {
   useEffect(() => {
     if (done.current) return;
     done.current = true;
-    if (location.pathname === "/" && loadAppMode() === APP_MODES.PLAYER) {
+    if (
+      PLAYER_ENABLED &&
+      location.pathname === "/" &&
+      loadAppMode() === APP_MODES.PLAYER
+    ) {
       navigate("/player", { replace: true });
     }
   }, [location.pathname, navigate]);
@@ -97,7 +102,9 @@ function AppShell({ maximized, setMaximized }) {
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             <Routes>
               <Route path="/" element={<Home open={open} />} />
-              <Route path="/player" element={<PlayerPage />} />
+              {PLAYER_ENABLED ? (
+                <Route path="/player" element={<PlayerPage />} />
+              ) : null}
               <Route path="/val" element={<FileDesc />} />
             </Routes>
           </div>
@@ -117,7 +124,7 @@ function App() {
           <PlayerSessionProvider>
             <BrowserRouter>
               <ModeBootstrap />
-              <PlayerSessionLifecycle />
+              {PLAYER_ENABLED ? <PlayerSessionLifecycle /> : null}
               <AppShell maximized={maximized} setMaximized={setMaximized} />
             </BrowserRouter>
           </PlayerSessionProvider>

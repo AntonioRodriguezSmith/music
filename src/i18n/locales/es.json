@@ -187,7 +187,8 @@
     "chooseFile": "Elegir cookies.txt",
     "clearFile": "Quitar archivo",
     "dialogTitle": "Seleccionar cookies.txt (formato Netscape)",
-    "filterName": "Cookies"
+    "filterName": "Cookies",
+    "refreshFailed": "No se pudieron refrescar cookies de Firefox. Usa Elegir cookies.txt."
   },
   "formats": {
     "page": "{{page}} / {{total}}",

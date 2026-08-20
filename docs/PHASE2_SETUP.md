@@ -34,6 +34,14 @@ La UI de la sidebar solo ofrece **Elegir cookies.txt**. No uses el selector “D
 
 9. En Clip Harbour: sidebar → **Elegir cookies.txt** → `C:\Users\rodri\cookies_youtube\cookies_merged.txt`.
 
+> **Autodetección (desde este fork):** al iniciar la app, si aún no tienes ninguna cookie configurada, Clip Harbour escanea automáticamente la carpeta `C:\Users\<usuario>\cookies_youtube` y, si hay algún `.txt`, selecciona el más probable (prioridad: `cookies_merged` → `cookies_chrome`/`cookies_edge`/`cookies_firefox`/`cookies.txt` → otras) y lo persiste. La carpeta de escaneo se puede cambiar con la variable `CLIP_HARBOUR_COOKIES_DIR`. Si el `.txt` está en otro sitio o la autodetección se salta el archivo correcto, elige el archivo a mano en la sidebar.
+>
+> **BOM tolerado (desde este fork):** si el archivo de cookies se guardó con un **BOM UTF-8** al principio (algo que `yt-dlp` rechaza con *does not look like a Netscape format cookies file*), la app lo detecta automáticamente y genera una copia limpia `<nombre>.nobom.txt` al lado del original, usándola al descargar. No necesitas re-exportar por este motivo.
+>
+> **Auto-refresh desde Firefox (desde este fork):** al iniciar la app, Clip Harbour extrae automáticamente las cookies de sesión de **Firefox** con `yt-dlp --cookies-from-browser firefox`, las filtra/enriquece en Rust (solo dominios YouTube/Google, dedupe conservando la expiración más reciente, UTF-8 sin BOM, dominios con `.` marcados `TRUE`) y las escribe en `C:\Users\<usuario>\cookies_youtube\cookies_merged.txt`, que queda seleccionado automáticamente. Esto evita el `403: revisa cookies de YouTube en el panel lateral` por cookies caducas. Si Firefox no tiene sesión (o falla la extracción), la app conserva el archivo previo y muestra un aviso en la sidebar.
+>
+> **Seguridad:** este auto-refresh deja cookies reales de sesión en texto plano en `cookies_merged.txt`. Evita poner esa carpeta en sincronización (Proton Drive/OneDrive) o compartirla.
+
 Plantilla de formato (no usable como cookies reales): [`cookies/cookies.txt.example`](./cookies/cookies.txt.example).  
 Detalle ampliado: [`cookies/cookies_info.md`](./cookies/cookies_info.md).
 
@@ -57,7 +65,7 @@ npm run fetch:sidecars:windows
 En desarrollo no hay icono de escritorio: usa la terminal.
 
 1. `npm run tauri -- dev` o `npm run launch:windows` (splash + acceso directo; ver [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md)). Ventana nativa; no el browser en `:1420`.
-2. Sidebar: archivo `cookies.txt` seleccionado.
+2. Sidebar: archivo `cookies.txt` seleccionado (o autodetectado al iniciar desde `cookies_youtube`).
 3. Buscar un término corto → resultados sin “Sign in to confirm you're not a bot”.
 4. Una descarga de prueba; en Historial, **Abrir** el fichero.
 5. Opcional cola: encola → cierra la app → reabre → banner **Reanudar N pendientes** → Reintentar.

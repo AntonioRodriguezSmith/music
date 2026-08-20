@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { isTauri } from "../../lib/tauri_env";
+import { PLAYER_ENABLED } from "../../lib/feature_flags";
 import {
   APP_MODES,
   modeFromPath,
@@ -67,15 +68,17 @@ export default function TitleBar({ onMaximizedChange }) {
       >
         {t("app.modeDownload")}
       </button>
-      <button
-        type="button"
-        className={`px-2 py-0.5 border border-black rounded ${
-          mode === APP_MODES.PLAYER ? "bg-black text-white" : "bg-white"
-        }`}
-        onClick={() => setMode(APP_MODES.PLAYER)}
-      >
-        {t("app.modePlayer")}
-      </button>
+      {PLAYER_ENABLED ? (
+        <button
+          type="button"
+          className={`px-2 py-0.5 border border-black rounded ${
+            mode === APP_MODES.PLAYER ? "bg-black text-white" : "bg-white"
+          }`}
+          onClick={() => setMode(APP_MODES.PLAYER)}
+        >
+          {t("app.modePlayer")}
+        </button>
+      ) : null}
     </div>
   );
 
