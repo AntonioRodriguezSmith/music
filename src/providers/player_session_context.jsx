@@ -9,7 +9,7 @@ import {
 } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { cookieInvokeArgs } from "../lib/cookies_prefs";
-import { isTauri } from "../lib/tauri_env";
+import { isMobile, isTauri } from "../lib/tauri_env";
 import {
   activeList,
   addToPlaylist as addItem,
@@ -449,7 +449,7 @@ export function PlayerSessionProvider({ children }) {
   ]);
 
   useEffect(() => {
-    if (!isTauri() || !nowPlaying || status !== "playing") return undefined;
+    if (!isTauri() || isMobile() || !nowPlaying || status !== "playing") return undefined;
     const keepIds = keepWindowIds(sessionQueue, nowPlaying.id);
     // Also keep anything currently downloading in cache
     for (const [videoId, meta] of inflightRef.current.entries()) {
@@ -471,7 +471,9 @@ export function PlayerSessionProvider({ children }) {
     prefetchIdRef.current = null;
     setSessionQueue([]);
     stopPlayback();
-    if (isTauri()) {
+    // Mobile: the play cache is the offline library, so it must persist between
+    // sessions (cleared by the user per-item, never wiped on exit).
+    if (isTauri() && !isMobile()) {
       invoke("clear_player_cache").catch(() => {});
     }
   }, [stopPlayback]);
@@ -494,7 +496,17 @@ export function PlayerSessionProvider({ children }) {
     async (video) => {
       const item = toPlaylistItem(video || nowPlaying);
       if (!item?.id) return;
-      if (!String(downloadPath || "").trim()) {
+      let outputDir = String(downloadPath || "").trim();
+      if (!outputDir) {
+        // Mobile: no folder picker — the app-managed default (document_dir/Music)
+        // is always writable. Desktop keeps the explicit-folder requirement.
+        if (isMobile()) {
+          outputDir = await invoke("resolve_download_dir");
+        } else {
+          throw new Error("needFolder");
+        }
+      }
+      if (!String(outputDir || "").trim()) {
         throw new Error("needFolder");
       }
       // M4A + embedded tags for USB / BMW car stereos (title/artist/album; filename = title).
@@ -505,7 +517,7 @@ export function PlayerSessionProvider({ children }) {
           embed_thumbnail: false,
           output_ext: "m4a",
         },
-        downloadPath,
+        downloadPath: outputDir,
         formatId: "bestaudio/best",
         url: item.url,
         title: item.title,

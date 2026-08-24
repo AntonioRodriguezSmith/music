@@ -19,8 +19,25 @@ export default function MobileSearch() {
     requestPlay,
     playNext,
     playPrev,
+    downloadAudio,
   } = usePlayerSession();
   const [isFocused, setIsFocused] = useState(false);
+  const [dlBusy, setDlBusy] = useState(false);
+  const [dlMsg, setDlMsg] = useState("");
+
+  async function onDownloadAudio() {
+    setDlMsg("");
+    setDlBusy(true);
+    try {
+      await downloadAudio(nowPlaying);
+      setDlMsg(t("player.audioQueued"));
+    } catch (e) {
+      const code = typeof e === "string" ? e : e?.message;
+      setDlMsg(code === "needFolder" ? t("download.needFolder") : code || t("player.audioFailed"));
+    } finally {
+      setDlBusy(false);
+    }
+  }
 
   const isLoading =
     Array.isArray(searchResults) &&
@@ -88,6 +105,19 @@ export default function MobileSearch() {
             >
               →
             </button>
+          </div>
+          <div className="px-3 pb-2 flex items-center gap-2 border-t border-white/10 pt-2">
+            <button
+              type="button"
+              className="min-h-11 px-3 bg-white text-black text-xs disabled:opacity-40"
+              onClick={onDownloadAudio}
+              disabled={!nowPlaying || dlBusy}
+            >
+              {t("player.downloadAudio")}
+            </button>
+            {dlMsg ? (
+              <span className="text-[10px] text-white/70 truncate">{dlMsg}</span>
+            ) : null}
           </div>
         </div>
       ) : null}
