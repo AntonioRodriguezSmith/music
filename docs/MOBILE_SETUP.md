@@ -75,7 +75,8 @@ npm run tauri -- android init
 - **Ruta real:** Tauri 2.11 genera en `src-tauri/gen/android/` (**no** en
   `android/` en la raíz). El proyecto Android es código fuente y se commitea.
 - Re-ejecutar `tauri android init` no borra cambios propios de
-  `src-tauri/gen/android/` (p. ej. la integración Chaquopy de m2).
+  `src-tauri/gen/android/` (p. ej. `jniLibs/libffmpeg.so` y
+  `keystore.properties`).
 
 ## 3. Keystore y firma (sideload)
 
@@ -172,3 +173,5 @@ npm run tauri -- android dev
 | `linker link.exe not found` (cargo check) | Cargar el entorno MSVC primero: `. scripts\setup-windows-env.ps1` |
 | `resource path binaries\yt-dlp-aarch64-linux-android doesn't exist` | Es **esperado** hasta m2 (proveer el sidecar de ffmpeg / saltar `externalBin` en móvil) |
 | `VITE_ENABLE_PLAYER` sin efecto | El build no se lanzó con `--mode mobile`; ver §4 |
+| `Creation symbolic link is not allowed for this system` (`tauri android build`/`dev`) | **Windows Developer Mode** (Ajustes → Privacidad y seguridad → Para desarrolladores). El CLI Tauri enlaza `libclip_harbour_lib.so` en `jniLibs` con un symlink; sin Developer Mode (o elevación) falla. Smoke alternativo sin symlink: compilar el `.so` (`cargo build --target aarch64-linux-android`), copiarlo a `app/src/main/jniLibs/arm64-v8a/` y ejecutar `.\gradlew.bat :app:assembleArm64Debug -x :app:rustBuildArm64Debug -x :app:rustBuildUniversalDebug` |
+| `failed to read missing addr file ...com.clip-harbour.app-server-addr` | El task Gradle `rustBuild*` invoca `tauri android android-studio-script`, que espera el archivo de addr que solo crea el CLI en el flujo normal. Usar `tauri android build` (con Developer Mode) o el smoke Gradle directo de la fila anterior |

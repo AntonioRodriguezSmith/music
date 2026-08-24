@@ -20,6 +20,7 @@ Mira el [vídeo de demostración](https://www.youtube.com/watch?v=VYv4jSYCPak).
 - [Uso](#uso)
 - [Desarrollo](#configuración-de-desarrollo)
 - [Windows](#desarrollo-en-windows)
+- [Móvil (Android)](#móvil-android)
 - [Licencia](#licencia)
 
 ## Motivación
@@ -120,7 +121,7 @@ npm install
 npm run fetch:sidecars:windows
 npm run test                 # tests unitarios (vitest)
 npm run test:e2e             # Playwright contra Vite (sin IPC Tauri)
-npm run smoke:windows        # sidecars --version + tests unitarios
+npm run smoke:windows        # binarios --version + cargo test + tests unitarios
 # opcional: copiar .env.example → .env y definir VITE_DEFAULT_DOWNLOAD_PATH
 # cookies: ver docs/PHASE2_SETUP.md
 npm run dev:windows
@@ -139,6 +140,25 @@ Usa siempre la **ventana de la app de escritorio** para probar búsqueda y desca
 Si ves `cargo metadata: program not found`, abre una **terminal nueva** (el PATH se define en `.vscode/settings.json`) o ejecuta `npm run tauri -- dev` / `npm run dev:windows`.
 
 Resumen Fase 3: **[docs/PHASE3.md](docs/PHASE3.md)**. Resumen Fase 2: **[docs/PHASE2.md](docs/PHASE2.md)**. Cierre Fase 1: **[docs/PHASE1.md](docs/PHASE1.md)**.
+
+## Móvil (Android)
+
+App Android **limitada a las funciones de música** (buscar, cache offline, playlists,
+descarga de audio). El escritorio no se toca; el shell móvil se activa por `isMobile()`.
+
+```powershell
+npm run fetch:sidecars:android
+npm run tauri:android -- dev     # build + install en emulador/dispositivo
+```
+
+Arquitectura, flujo de datos (mermaid) y limitaciones: **[docs/MOBILE.md](docs/MOBILE.md)**.
+Toolchain Android portable (JDK + SDK + NDK), keystore y firma del APK:
+**[docs/MOBILE_SETUP.md](docs/MOBILE_SETUP.md)**. Veredicto del spike:
+**[docs/MOBILE_SPIKE.md](docs/MOBILE_SPIKE.md)**.
+
+> Estado: MVP en desarrollo. `yt-dlp` se integra vía Chaquopy (no hay binario standalone
+> para Android) y `ffmpeg` se empaqueta como `jniLibs/libffmpeg.so`. La reproducción es
+> solo en primer plano (sin media notification ni audio en segundo plano).
 
 ## Licencia
 Este proyecto está bajo la licencia GNU GPL-3.0. Puedes usar, modificar y distribuir el software según los términos de la [licencia GPL-3.0](./LICENSE.md).
