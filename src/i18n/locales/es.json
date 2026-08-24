@@ -4,7 +4,7 @@
     "minimize": "Minimizar",
     "maximize": "Maximizar",
     "close": "Cerrar",
-    "modeDownload": "Descargar",
+    "modeDownload": "Music",
     "modePlayer": "Player"
   },
   "player": {
@@ -93,6 +93,7 @@
     "placeholder": "Buscar o pegar URL de YouTube",
     "button": "Buscar",
     "busy": "...",
+    "stop": "Detener búsqueda",
     "browserOnly": "Abre la ventana de escritorio de Clip Harbour (npm run tauri -- dev). El navegador no puede buscar.",
     "failed": "La búsqueda falló",
     "noResultsYet": "Sin resultados todavía. Busca un término o pega una URL de YouTube.",
@@ -181,14 +182,18 @@
   },
   "cookies": {
     "title": "Cookies de YouTube",
-    "hint": "Necesarias cuando YouTube pide confirmar que no eres un bot. Exporta un cookies.txt (formato Netscape) e indícalo aquí. Ver docs/PHASE2_SETUP.md.",
+    "hint": "Usa un cookies.txt de YouTube para evitar el bloqueo anti-bot.",
     "file": "Archivo: {{path}}",
     "noFile": "ninguno",
     "chooseFile": "Elegir cookies.txt",
     "clearFile": "Quitar archivo",
     "dialogTitle": "Seleccionar cookies.txt (formato Netscape)",
     "filterName": "Cookies",
-    "refreshFailed": "No se pudieron refrescar cookies de Firefox. Usa Elegir cookies.txt."
+    "refreshFailed": "No se pudieron extraer cookies del navegador. Cierra Firefox/Chrome/Edge y usa Actualizar cookies o Elegir cookies.txt.",
+    "refreshFailedHint": "No se pudo extraer cookies: cierra los navegadores (Firefox/Chrome/Edge) e inténtalo de nuevo, o elige un cookies.txt manualmente.",
+    "refreshButton": "Actualizar cookies",
+    "refreshRunning": "Actualizando…",
+    "refreshOk": "Cookies actualizadas: {{path}}"
   },
   "formats": {
     "page": "{{page}} / {{total}}",
@@ -210,5 +215,19 @@
     "size": "Tamaño",
     "resolution": "Resolución",
     "fps": "FPS"
+  },
+  "errors": {
+    "COOKIES_INVALID": "El archivo de cookies no es válido. Exporta cookies reales (Netscape) con una extensión tras iniciar sesión en YouTube y elígela en la sidebar.",
+    "COOKIES_NO_SESSION": "Las cookies no tienen una sesión de YouTube (faltan SID/HSID). Inicia sesión en el navegador y vuelve a intentarlo.",
+    "COOKIES_FILE_NOT_FOUND": "El archivo de cookies no existe. Revisa la ruta en la sidebar.",
+    "RATE_LIMIT": "YouTube ha limitado esta sesión (hasta ~1 hora). Espera un rato y evita lanzar varios vídeos seguidos.",
+    "AUTH_BLOCK": "YouTube pide confirmar que no eres un bot. Configura un cookies.txt en la sidebar o espera unos minutos.",
+    "DIR_ACCESS": "No se pudo crear la carpeta de descarga (permiso denegado). Elige otra carpeta o comprueba que la ruta exista.",
+    "NO_RESULTS": "No se encontraron resultados para esa búsqueda. Prueba otra consulta o configura cookies de YouTube.",
+    "YTDLP_SPAWN": "No se pudo lanzar yt-dlp. Comprueba que esté instalado como sidecar.",
+    "YTDLP_FAILED": "yt-dlp no pudo completar la operación.",
+    "NO_DATA": "yt-dlp no devolvió datos. Inténtalo de nuevo.",
+    "PARSE_JSON": "No se pudo interpretar la respuesta de YouTube. Inténtalo de nuevo.",
+    "INTERNAL": "Ocurrió un error inesperado. Revisa la consola o vuelve a intentarlo."
   }
 }

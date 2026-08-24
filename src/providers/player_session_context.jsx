@@ -10,7 +10,6 @@ import {
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { cookieInvokeArgs } from "../lib/cookies_prefs";
 import { isTauri } from "../lib/tauri_env";
-import { videoKey, extractYouTubeId } from "../lib/youtube_id";
 import {
   activeList,
   addToPlaylist as addItem,
@@ -19,7 +18,6 @@ import {
   deletePlaylist as deleteList,
   listMeta,
   loadPlaylists,
-  markOffline,
   neighborIndex,
   reconcileOffline,
   removeFromPlaylist as removeItem,
@@ -32,60 +30,17 @@ import { useDownloadQueue } from "./download_queue_context";
 import { DownloadPathContext } from "./download_path_context";
 import { buildDownloadPayload } from "../lib/build_download_payload";
 import { isFinished, isActive } from "../lib/download_status";
+import { usePlayerDownloads } from "../hooks/use_player_downloads";
+import {
+  PREFETCH_KEY,
+  countPlayerBusy,
+  isRateLimitMessage,
+  keepWindowIds,
+  loadPrefetchPref,
+  toPlaylistItem,
+} from "../lib/player_helpers";
 
 const PlayerSessionContext = createContext(null);
-const PREFETCH_KEY = "clip_harbour_player_prefetch";
-
-function isRateLimitMessage(msg) {
-  const s = String(msg || "").toLowerCase();
-  return (
-    s.includes("rate-limited") ||
-    s.includes("rate limited") ||
-    s.includes("isn't available, try again later") ||
-    s.includes("ha limitado esta sesión")
-  );
-}
-
-function loadPrefetchPref() {
-  try {
-    return localStorage.getItem(PREFETCH_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function toPlaylistItem(video) {
-  const id = videoKey(video) || extractYouTubeId(video?.url) || video?.url || "";
-  const rawUrl = String(video?.url || id || "").trim();
-  const url = /^https?:\/\//i.test(rawUrl)
-    ? rawUrl
-    : id
-      ? `https://www.youtube.com/watch?v=${id}`
-      : rawUrl;
-  return {
-    id,
-    title: video?.title || id,
-    url,
-    thumbnail: video?.thumbnail || "",
-    uploader: video?.uploader || video?.channel || "",
-    duration: video?.duration || "",
-    offline: Boolean(video?.offline),
-  };
-}
-
-function keepWindowIds(playlist, currentId) {
-  const ids = [];
-  const prev = neighborIndex(playlist, currentId, -1);
-  const next = neighborIndex(playlist, currentId, 1);
-  if (prev >= 0) ids.push(itemKey(playlist[prev]));
-  if (currentId) ids.push(String(currentId));
-  if (next >= 0) ids.push(itemKey(playlist[next]));
-  return ids.filter(Boolean);
-}
-
-function countPlayerBusy(downloads) {
-  return Object.values(downloads).filter((d) => isActive(d.status)).length;
-}
 
 export function PlayerSessionProvider({ children }) {
   const { registerDownloadConfig, downloads } = useDownloadQueue();
@@ -100,14 +55,7 @@ export function PlayerSessionProvider({ children }) {
   const [cacheJobId, setCacheJobId] = useState(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [prefetchEnabled, setPrefetchEnabledState] = useState(() => loadPrefetchPref());
-  /** videoIds currently saving offline (playlist job or pending promote) */
-  const [savingIds, setSavingIds] = useState(() => new Set());
-  /** videoId → { processId, purpose, listId? } — one download per video */
-  const inflightRef = useRef(new Map());
-  /** processId → { listId, videoId } for offline flag when playlist purpose finishes */
-  const playlistJobsRef = useRef(new Map());
   /** videoIds waiting to be promoted into a playlist after a cache job finishes */
-  const pendingPromoteRef = useRef(new Map()); // videoId → listId
   const prefetchIdRef = useRef(null);
   const pendingPlayKeyRef = useRef(null);
   const playlistStateRef = useRef(playlistState);
@@ -157,34 +105,21 @@ export function PlayerSessionProvider({ children }) {
 
   const dismissRateLimit = useCallback(() => setRateLimited(false), []);
 
-  const markItemOffline = useCallback((listId, videoId) => {
-    setPlaylistState((prev) => {
-      const next = markOffline(prev, listId, videoId, true);
-      savePlaylists(next);
-      return next;
-    });
-    if (isTauri()) {
-      invoke("append_playlist_archive", { slug: listId, videoId }).catch(() => {});
-    }
-    setSavingIds((prev) => {
-      if (!prev.has(videoId)) return prev;
-      const n = new Set(prev);
-      n.delete(videoId);
-      return n;
-    });
-  }, []);
-
-  const markSaving = useCallback((videoId, on) => {
-    setSavingIds((prev) => {
-      const has = prev.has(videoId);
-      if (on && has) return prev;
-      if (!on && !has) return prev;
-      const n = new Set(prev);
-      if (on) n.add(videoId);
-      else n.delete(videoId);
-      return n;
-    });
-  }, []);
+  const {
+    savingIds,
+    inflightRef,
+    pendingPromoteRef,
+    resolvePlayFile,
+    startCacheJob,
+    startPlaylistOfflineJob,
+  } = usePlayerDownloads({
+    registerDownloadConfig,
+    activePlaylistId,
+    rateLimited,
+    noteRateLimit,
+    setPlaylistState,
+    downloads,
+  });
 
   const reconcilePlaylist = useCallback(
     async (listId) => {
@@ -199,13 +134,6 @@ export function PlayerSessionProvider({ children }) {
     },
     [],
   );
-
-  const clearInflight = useCallback((videoId, processId) => {
-    const cur = inflightRef.current.get(String(videoId));
-    if (cur && String(cur.processId) === String(processId)) {
-      inflightRef.current.delete(String(videoId));
-    }
-  }, []);
 
   const selectPlaylist = useCallback(
     (id) => {
@@ -272,138 +200,6 @@ export function PlayerSessionProvider({ children }) {
     void reconcilePlaylist(activePlaylistId);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once on mount
   }, []);
-
-  const resolvePlayFile = useCallback(
-    async (videoId) => {
-      if (!isTauri()) return null;
-      return invoke("resolve_player_cache_file", {
-        videoId,
-        activeSlug: activePlaylistId,
-      });
-    },
-    [activePlaylistId],
-  );
-
-  const tryPromoteToPlaylist = useCallback(
-    async (slug, videoId) => {
-      if (!isTauri() || !slug || !videoId) return false;
-      const path = await invoke("promote_to_playlist", { slug, videoId }).catch(() => null);
-      if (path) {
-        markItemOffline(slug, videoId);
-        return true;
-      }
-      return false;
-    },
-    [markItemOffline],
-  );
-
-  const startCacheJob = useCallback(
-    async (video) => {
-      if (!isTauri()) throw new Error("Player cache requires Tauri");
-      const item = toPlaylistItem(video);
-      if (!item.id) return null;
-
-      const existing = await resolvePlayFile(item.id);
-      if (existing) return null;
-
-      const inflight = inflightRef.current.get(item.id);
-      if (inflight?.processId != null) {
-        return String(inflight.processId);
-      }
-
-      const cacheDir = await invoke("player_cache_dir");
-      const payload = {
-        url: item.url || item.id,
-        title: item.title || "",
-        output_dir: cacheDir,
-        // Prefer progressive mp4 when available (one stream, no merge wait).
-        format: "b[height<=720][ext=mp4]/bv*[height<=720]+ba/b",
-        output_ext: null,
-        embed_subtitles: false,
-        embed_metadata: false,
-        embed_thumbnail: false,
-        purpose: "cache",
-        ...cookieInvokeArgs(),
-      };
-      const processId = await invoke("start_download", { config: payload });
-      const id = String(processId);
-      registerDownloadConfig(processId, payload);
-      inflightRef.current.set(item.id, { processId: id, purpose: "cache" });
-      return id;
-    },
-    [registerDownloadConfig, resolvePlayFile],
-  );
-
-  const startPlaylistOfflineJob = useCallback(
-    async (video, listId) => {
-      if (!isTauri()) return null;
-      const item = toPlaylistItem(video);
-      if (!item.id) return null;
-      const slug = listId || activePlaylistId;
-
-      const already = await invoke("resolve_playlist_file", {
-        slug,
-        videoId: item.id,
-      }).catch(() => null);
-      if (already) {
-        markItemOffline(slug, item.id);
-        return null;
-      }
-
-      // Reuse disk copy from cache/elsewhere — no second download.
-      markSaving(item.id, true);
-      if (await tryPromoteToPlaylist(slug, item.id)) {
-        return null;
-      }
-
-      const inflight = inflightRef.current.get(item.id);
-      if (inflight?.processId != null) {
-        // Same video already downloading (usually cache for play) — promote when done.
-        pendingPromoteRef.current.set(item.id, slug);
-        if (inflight.purpose === "playlist") {
-          playlistJobsRef.current.set(String(inflight.processId), {
-            listId: slug,
-            videoId: item.id,
-          });
-        }
-        return String(inflight.processId);
-      }
-
-      if (rateLimited) {
-        markSaving(item.id, false);
-        throw new Error("rateLimited");
-      }
-
-      const dir = await invoke("playlist_dir", { slug });
-      const payload = {
-        url: item.url || item.id,
-        title: item.title || "",
-        output_dir: dir,
-        format: "bv*[height<=720]+ba/b",
-        output_ext: null,
-        embed_subtitles: false,
-        embed_metadata: false,
-        embed_thumbnail: false,
-        purpose: "playlist",
-        ...cookieInvokeArgs(),
-      };
-      const processId = await invoke("start_download", { config: payload });
-      const id = String(processId);
-      registerDownloadConfig(processId, payload);
-      inflightRef.current.set(item.id, { processId: id, purpose: "playlist", listId: slug });
-      playlistJobsRef.current.set(id, { listId: slug, videoId: item.id });
-      markSaving(item.id, true);
-      return id;
-    },
-    [
-      activePlaylistId,
-      markItemOffline,
-      markSaving,
-      rateLimited,
-      registerDownloadConfig,
-      tryPromoteToPlaylist,
-    ],
-  );
 
   const addToPlaylist = useCallback(
     async (video) => {
@@ -557,54 +353,6 @@ export function PlayerSessionProvider({ children }) {
     },
     [nowPlaying, stopPlayback],
   );
-
-  // Track download completion: clear inflight, mark offline, promote cache→playlist
-  useEffect(() => {
-    for (const [videoId, meta] of [...inflightRef.current.entries()]) {
-      const job = downloads[meta.processId];
-      if (!job) continue;
-      if (isFinished(job.status)) {
-        clearInflight(videoId, meta.processId);
-        if (meta.purpose === "playlist") {
-          const pj = playlistJobsRef.current.get(meta.processId);
-          if (pj) {
-            markItemOffline(pj.listId, pj.videoId);
-            playlistJobsRef.current.delete(meta.processId);
-          }
-        }
-        const promoteSlug = pendingPromoteRef.current.get(videoId);
-        if (promoteSlug) {
-          pendingPromoteRef.current.delete(videoId);
-          tryPromoteToPlaylist(promoteSlug, videoId).catch(() => {});
-        }
-      } else if (
-        job.status === "cancelled" ||
-        String(job.status).startsWith("error")
-      ) {
-        clearInflight(videoId, meta.processId);
-        playlistJobsRef.current.delete(meta.processId);
-        pendingPromoteRef.current.delete(videoId);
-        noteRateLimit(job.status);
-        markSaving(videoId, false);
-      }
-    }
-
-    for (const [jobId, meta] of [...playlistJobsRef.current.entries()]) {
-      const job = downloads[jobId];
-      if (!job) continue;
-      if (isFinished(job.status)) {
-        markItemOffline(meta.listId, meta.videoId);
-        playlistJobsRef.current.delete(jobId);
-      } else if (
-        job.status === "cancelled" ||
-        String(job.status).startsWith("error")
-      ) {
-        playlistJobsRef.current.delete(jobId);
-        noteRateLimit(job.status);
-        markSaving(meta.videoId, false);
-      }
-    }
-  }, [downloads, clearInflight, markItemOffline, markSaving, noteRateLimit, tryPromoteToPlaylist]);
 
   // Resolve watched job → local media URL
   useEffect(() => {

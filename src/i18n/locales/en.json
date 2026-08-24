@@ -4,7 +4,7 @@
     "minimize": "Minimize",
     "maximize": "Maximize",
     "close": "Close",
-    "modeDownload": "Download",
+    "modeDownload": "Music",
     "modePlayer": "Player"
   },
   "player": {
@@ -93,6 +93,7 @@
     "placeholder": "Search or paste YouTube URL",
     "button": "Search",
     "busy": "...",
+    "stop": "Stop search",
     "browserOnly": "Open the Clip Harbour desktop window (npm run tauri -- dev). The browser cannot search.",
     "failed": "Search failed",
     "noResultsYet": "No results yet. Search a term or paste a YouTube URL.",
@@ -181,14 +182,18 @@
   },
   "cookies": {
     "title": "YouTube cookies",
-    "hint": "Needed when YouTube asks to confirm you are not a bot. Export a Netscape cookies.txt and select it here. See docs/PHASE2_SETUP.md.",
+    "hint": "Use a YouTube cookies.txt to avoid the anti-bot block.",
     "file": "File: {{path}}",
     "noFile": "none",
     "chooseFile": "Choose cookies.txt",
     "clearFile": "Clear file",
     "dialogTitle": "Select cookies.txt (Netscape format)",
     "filterName": "Cookies",
-    "refreshFailed": "Could not refresh cookies from Firefox. Use Choose cookies.txt."
+    "refreshFailed": "Could not extract cookies from the browser. Close Firefox/Chrome/Edge and use Refresh cookies or Choose cookies.txt.",
+    "refreshFailedHint": "Could not extract cookies: close the browsers (Firefox/Chrome/Edge) and try again, or pick a cookies.txt manually.",
+    "refreshButton": "Refresh cookies",
+    "refreshRunning": "Refreshing…",
+    "refreshOk": "Cookies refreshed: {{path}}"
   },
   "formats": {
     "page": "{{page}} / {{total}}",
@@ -210,5 +215,19 @@
     "size": "Size",
     "resolution": "Resolution",
     "fps": "FPS"
+  },
+  "errors": {
+    "COOKIES_INVALID": "The cookies file is invalid. Export real cookies (Netscape) with an extension after signing in to YouTube and pick it in the sidebar.",
+    "COOKIES_NO_SESSION": "The cookies have no YouTube session (SID/HSID missing). Sign in in your browser and try again.",
+    "COOKIES_FILE_NOT_FOUND": "The cookies file does not exist. Check the path in the sidebar.",
+    "RATE_LIMIT": "YouTube has rate-limited this session (up to ~1 hour). Wait a while and avoid launching several videos in a row.",
+    "AUTH_BLOCK": "YouTube asks you to confirm you're not a bot. Set up a cookies.txt in the sidebar or wait a few minutes.",
+    "DIR_ACCESS": "Could not create the download folder (permission denied). Choose another folder or check that the path exists.",
+    "NO_RESULTS": "No results found for that search. Try another query or set up YouTube cookies.",
+    "YTDLP_SPAWN": "Could not launch yt-dlp. Make sure it is installed as a sidecar.",
+    "YTDLP_FAILED": "yt-dlp could not complete the operation.",
+    "NO_DATA": "yt-dlp returned no data. Try again.",
+    "PARSE_JSON": "Could not parse YouTube's response. Try again.",
+    "INTERNAL": "An unexpected error occurred. Check the console or try again."
   }
 }

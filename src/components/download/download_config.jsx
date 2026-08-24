@@ -5,6 +5,7 @@ import FolderPicker from "./save_destination";
 import { DownloadPathContext } from "../../providers/download_path_context";
 import CheckboxIcon from "../ui/checkbox";
 import Download from "../svg/download";
+import { friendlyError } from "../../lib/app_errors";
 import { invoke } from "@tauri-apps/api/core";
 import { useVideo } from "../../providers/video_context";
 import { useDownloadQueue } from "../../providers/download_queue_context";
@@ -107,11 +108,7 @@ export default function DownloadConfig({
           registerDownloadConfig(processId, payload);
         } catch (err) {
           console.error(err);
-          failures.push(
-            `${target.title || target.url}: ${
-              typeof err === "string" ? err : err?.message || t("download.failed")
-            }`,
-          );
+          failures.push(`${target.title || target.url}: ${friendlyError(err, t)}`);
         }
       }
       if (failures.length) {

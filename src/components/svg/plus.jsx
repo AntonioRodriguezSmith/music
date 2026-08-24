@@ -1,7 +1,7 @@
 export default function Plus(){
     return(
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" strokeWidth="1" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeWidth="1" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
     )
 }

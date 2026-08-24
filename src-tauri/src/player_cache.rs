@@ -9,7 +9,14 @@ pub fn player_keep_path() -> PathBuf {
             return PathBuf::from(trimmed);
         }
     }
-    PathBuf::from(r"C:\Users\rodri\Music\MEmu video")
+    // Default is per-user so the path works on any PC (no hardcoded usernames).
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .unwrap_or_default();
+    if home.is_empty() {
+        return PathBuf::from("MEmu video");
+    }
+    PathBuf::from(home).join("Music").join("MEmu video")
 }
 
 /// Ephemeral play cache (prev/now/next). Cleared on session end.

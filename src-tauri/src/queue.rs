@@ -7,10 +7,13 @@ use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use tokio::time::{sleep, Duration};
 
+use crate::binaries;
 use crate::models::{Download, DownloadConfig};
 use crate::state::{app_state, AppState, MAX_PARALLEL_DOWNLOADS, PROCESS_COUNTER};
 use crate::ytdlp::{
-    download_has_cookies, format_ytdlp_error, is_auth_block_error, parse_config,
+    app_merged_cookies_path, download_has_cookies, format_ytdlp_error, is_auth_block_error,
+    is_tmp_cookie_name, parse_config, refresh_cookies_all, sanitize_download_dir, tail_utf8,
+    truncate_utf8,
 };
 
 fn lock_process_registry(
@@ -36,11 +39,7 @@ fn truncate_cli_detail(raw: &str, max: usize) -> String {
         .filter(|l| !l.is_empty())
         .collect::<Vec<_>>()
         .join(" | ");
-    if flat.len() > max {
-        format!("{}…", &flat[..max])
-    } else {
-        flat
-    }
+    truncate_utf8(&flat, max)
 }
 
 fn clamp_pct(value: f64) -> f64 {
@@ -262,10 +261,10 @@ async fn run_ytdlp_attempt(
     #[cfg(debug_assertions)]
     eprintln!("yt-dlp args: {args:?}");
 
-    let sidecar_command = match app.shell().sidecar("yt-dlp") {
-        Ok(cmd) => cmd.args(args),
+    let sidecar_command = match binaries::resolve("yt-dlp") {
+        Ok(path) => app.shell().command(path).args(args),
         Err(e) => {
-            return Err(format!("error:yt-dlp sidecar: {e}"));
+            return Err(format!("error:yt-dlp: {e}"));
         }
     };
 
@@ -387,7 +386,50 @@ async fn run_ytdlp_attempt(
     Err(format!("error: unexpected status {status}"))
 }
 
-async fn run_download(app: tauri::AppHandle, process_id: usize, config: DownloadConfig) {
+async fn run_download(app: tauri::AppHandle, process_id: usize, mut config: DownloadConfig) {
+    // Ensure the destination folder is usable before yt-dlp runs: a persisted
+    // path from another user (e.g. `C:\Users\rodri\…`) would fail with an
+    // opaque WinError 5. Fall back to `%USERPROFILE%\Music\ClipHarbour`.
+    if let Some(dir) = config.output_dir.as_deref() {
+        match sanitize_download_dir(Some(dir)) {
+            Ok(real) => config.output_dir = Some(real),
+            Err(e) => {
+                set_download_status(&app, process_id, &config.title, e).await;
+                schedule_pending(app);
+                return;
+            }
+        }
+    } else if let Ok(real) = sanitize_download_dir(None) {
+        config.output_dir = Some(real);
+    }
+
+    // Auto-recover a stale cookies path before running yt-dlp: a persisted
+    // reference to a deleted `cookies_raw_<browser>.txt` temp (or a missing
+    // file) would otherwise block every download with "Cookies file not found".
+    // Refresh from the browser when possible, fall back to the app-generated
+    // `cookies_merged.txt`, and only as a last resort continue without cookies.
+    if let Some(path) = config.cookies_file.as_deref() {
+        let missing = !std::path::Path::new(path).is_file() || is_tmp_cookie_name(std::path::Path::new(path));
+        if missing {
+            eprintln!("cookies file missing ({path}); attempting auto-recovery");
+            match refresh_cookies_all(app.clone()).await {
+                Ok(fresh) => {
+                    eprintln!("recovered cookies: {fresh}");
+                    config.cookies_file = Some(fresh);
+                }
+                Err(e) => {
+                    eprintln!("cookie refresh failed: {e}");
+                    if let Some(merged) = app_merged_cookies_path(&app) {
+                        eprintln!("falling back to {merged}");
+                        config.cookies_file = Some(merged);
+                    } else {
+                        eprintln!("warning: continuing download without cookies");
+                        config.cookies_file = None;
+                    }
+                }
+            }
+        }
+    }
     let max_attempts = if download_has_cookies(&config) { 3 } else { 1 };
     let backoff_ms = [0u64, 2000, 5000];
 
@@ -433,17 +475,19 @@ async fn run_download(app: tauri::AppHandle, process_id: usize, config: Download
                 }
                 let can_retry = is_auth_block_error(&err) && attempt + 1 < max_attempts;
                 if can_retry {
+                    // Cookies caducas suelen causar 403: antes de reintentar, intenta
+                    // extraer cookies frescas del navegador y usa el archivo nuevo.
+                    if let Ok(fresh_path) = refresh_cookies_all(app.clone()).await {
+                        config.cookies_file = Some(fresh_path);
+                    }
                     continue;
                 }
-                let final_status = if is_auth_block_error(&err) {
-                    format_ytdlp_error(&err, err.clone())
-                } else {
+                let status = if is_auth_block_error(&err) {
+                    format_ytdlp_error(&err, err.clone()).to_status_string()
+                } else if err.starts_with("error") {
                     err
-                };
-                let status = if final_status.starts_with("error") {
-                    final_status
                 } else {
-                    format!("error: {final_status}")
+                    format!("error: {err}")
                 };
                 set_download_status(&app, process_id, &config.title, status).await;
                 schedule_pending(app);
@@ -574,14 +618,14 @@ async fn convert_video(
     }
 
     let args = ffmpeg_convert_args(&input_path, &output_path);
-    let sidecar_command = match app.shell().sidecar("ffmpeg") {
-        Ok(cmd) => cmd.args(args),
+    let sidecar_command = match binaries::resolve("ffmpeg") {
+        Ok(path) => app.shell().command(path).args(args),
         Err(e) => {
-            eprintln!("ffmpeg sidecar: {e}");
+            eprintln!("ffmpeg: {e}");
             let snapshot = {
                 let mut download_registry = state.download_registry.lock().await;
                 if let Some(entry) = download_registry.get_mut(&process_id) {
-                    entry.status = format!("error:ffmpeg sidecar: {e}");
+                    entry.status = format!("error:ffmpeg: {e}");
                 }
                 download_registry.clone()
             };
@@ -672,7 +716,7 @@ async fn convert_video(
                 let log = String::from_utf8_lossy(&line_bytes);
                 ffmpeg_stderr.push_str(&log);
                 if ffmpeg_stderr.len() > 4000 {
-                    ffmpeg_stderr = ffmpeg_stderr[ffmpeg_stderr.len() - 3000..].to_string();
+                    ffmpeg_stderr = tail_utf8(&ffmpeg_stderr, 3000);
                 }
             }
             CommandEvent::Terminated(payload) => {
@@ -855,5 +899,119 @@ pub async fn resume_download(app: tauri::AppHandle, id: usize) -> Result<(), Str
     {
         let _ = (app, id);
         Err("resume_download is not supported on this platform".to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::Download;
+
+    #[test]
+    fn clamp_pct_bounds() {
+        assert_eq!(clamp_pct(-10.0), 0.0);
+        assert_eq!(clamp_pct(0.0), 0.0);
+        assert_eq!(clamp_pct(50.0), 50.0);
+        assert_eq!(clamp_pct(100.0), 100.0);
+        assert_eq!(clamp_pct(150.0), 100.0);
+    }
+
+    #[test]
+    fn parse_pct_str_handles_variants() {
+        assert_eq!(parse_pct_str("42.5%"), Some(42.5));
+        assert_eq!(parse_pct_str("100"), Some(100.0));
+        assert_eq!(parse_pct_str(""), None);
+        assert_eq!(parse_pct_str("abc"), None);
+    }
+
+    #[test]
+    fn map_download_pct_scales_with_conversion() {
+        assert_eq!(map_download_pct(50.0, false), 50.0);
+        assert_eq!(map_download_pct(100.0, true), 70.0);
+        assert_eq!(map_download_pct(50.0, true), 35.0);
+    }
+
+    #[test]
+    fn map_convert_pct_scales_to_70_100() {
+        assert_eq!(map_convert_pct(0.0), 70.0);
+        assert_eq!(map_convert_pct(100.0), 100.0);
+        assert_eq!(map_convert_pct(50.0), 85.0);
+    }
+
+    #[test]
+    fn format_pct_rounds() {
+        assert_eq!(format_pct(29.75), "30%");
+        assert_eq!(format_pct(100.0), "100%");
+    }
+
+    #[test]
+    fn merge_ytdlp_progress_updates_and_scales() {
+        let mut entry = Download {
+            title: "T".into(),
+            status: "starting".into(),
+            ..Default::default()
+        };
+        let incoming = Download {
+            title: String::new(),
+            status: "downloading".into(), // ignored by design
+            filename: Some("song.webm".into()),
+            percentage: Some("42.5%".into()),
+            speed: Some("1.2MiB/s".into()),
+            eta: Some("00:05".into()),
+            ..Default::default()
+        };
+        merge_ytdlp_progress(&mut entry, incoming, true);
+        assert_eq!(entry.filename.as_deref(), Some("song.webm"));
+        assert_eq!(entry.percentage.as_deref(), Some("30%")); // 42.5 * 0.7
+        assert_eq!(entry.speed.as_deref(), Some("1.2MiB/s"));
+        assert_eq!(entry.eta.as_deref(), Some("00:05"));
+        assert_eq!(entry.status, "downloading");
+    }
+
+    #[test]
+    fn merge_ytdlp_progress_without_conversion_keeps_raw_pct() {
+        let mut entry = Download {
+            title: "T".into(),
+            status: "downloading".into(),
+            ..Default::default()
+        };
+        let incoming = Download {
+            percentage: Some("90%".into()),
+            ..Default::default()
+        };
+        merge_ytdlp_progress(&mut entry, incoming, false);
+        assert_eq!(entry.percentage.as_deref(), Some("90%"));
+    }
+
+    #[test]
+    fn resolve_download_path_joins_relative() {
+        use std::path::PathBuf;
+        assert_eq!(
+            resolve_download_path("song.webm", Some(r"C:\Music")),
+            PathBuf::from(r"C:\Music").join("song.webm").to_string_lossy()
+        );
+        assert_eq!(
+            resolve_download_path("sub/song.webm", Some(r"C:\Music")),
+            PathBuf::from(r"C:\Music").join("sub/song.webm").to_string_lossy()
+        );
+    }
+
+    #[test]
+    fn resolve_download_path_keeps_absolute() {
+        assert_eq!(
+            resolve_download_path(r"D:\out\song.mp3", Some(r"C:\Music")),
+            r"D:\out\song.mp3"
+        );
+        assert_eq!(resolve_download_path("song.webm", None), "song.webm");
+    }
+
+    #[test]
+    fn is_busy_status_classifies() {
+        for s in ["starting", "downloading", "downloaded", "converting", "retrying"] {
+            assert!(is_busy_status(s), "{s} should be busy");
+        }
+        for s in ["queued", "finished", "cancelled", "paused", "error: x"] {
+            assert!(!is_busy_status(s), "{s} should not be busy");
+        }
     }
 }

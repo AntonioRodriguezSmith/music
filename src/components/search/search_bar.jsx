@@ -7,13 +7,11 @@ import { resolveInput } from "../../lib/resolve_input";
 import { isTauri } from "../../lib/tauri_env";
 import { cookieInvokeArgs } from "../../lib/cookies_prefs";
 import { SEARCH_FETCH_INITIAL, SEARCH_LOADING_SENTINEL } from "../../lib/search_constants";
+import { friendlyError } from "../../lib/app_errors";
 import SearchIcon from "../svg/search";
-import {
-  clearSearchHistory,
-  loadSearchHistory,
-  pushSearchHistory,
-  removeSearchHistoryItem,
-} from "../../lib/search_history";
+import StopIcon from "../svg/stop";
+import SearchHistoryDropdown from "./SearchHistoryDropdown";
+import { loadSearchHistory, pushSearchHistory } from "../../lib/search_history";
 
 /**
  * @param {{ setIsFocused: (v: boolean) => void, isFocused: boolean, playerMode?: boolean }} props
@@ -24,6 +22,9 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
   const [searchValue, setSearchValue] = useState("");
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Waiting for the first real results; drives the spinner in the submit button.
+  // Unlike `busy`, it clears as soon as results stream in, not when the search ends.
+  const [showSpinner, setShowSpinner] = useState(false);
   const [history, setHistory] = useState(() => loadSearchHistory());
   const [showHistory, setShowHistory] = useState(false);
   const navigate = useNavigate();
@@ -37,13 +38,14 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
     beginReplaceSearch,
   } = useVideo();
 
-  // Stop spinner as soon as real results stream in (don't wait for the full batch).
+  // Stop the spinner as soon as real results stream in (don't wait for the full batch).
+  // `busy` stays true so the stop button remains available while the search is in flight.
   useEffect(() => {
-    if (!busy || !Array.isArray(searchResults) || searchResults.length === 0) return;
+    if (!showSpinner || !Array.isArray(searchResults) || searchResults.length === 0) return;
     const stillLoading =
       searchResults.length === 1 && searchResults[0]?.title === SEARCH_LOADING_SENTINEL;
-    if (!stillLoading) setBusy(false);
-  }, [busy, searchResults]);
+    if (!stillLoading) setShowSpinner(false);
+  }, [showSpinner, searchResults]);
 
   async function runSearch(rawValue) {
     setError(null);
@@ -62,6 +64,7 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
     // Bump id first so in-flight searches stop applying results / errors.
     const searchId = nextSearchId();
     setBusy(true);
+    setShowSpinner(true);
     setShowHistory(false);
 
     const stillCurrent = () => searchIdRef.current === searchId;
@@ -117,14 +120,15 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
     } catch (e) {
       if (!stillCurrent()) return;
       console.error(e);
-      const message =
-        typeof e === "string" ? e : e?.message || JSON.stringify(e) || t("search.failed");
-      setError(message);
+      setError(friendlyError(e, t));
       setSearchResults(null);
       setSelectedVideo(null);
       if (!playerMode) navigate("/");
     } finally {
-      if (stillCurrent()) setBusy(false);
+      if (stillCurrent()) {
+        setBusy(false);
+        setShowSpinner(false);
+      }
     }
   }
 
@@ -188,6 +192,17 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
     void runSearch(searchValue);
   }
 
+  /** Cancel the in-flight search: invalidate it in the frontend and kill it in the backend. */
+  function handleStopSearch() {
+    nextSearchId();
+    setBusy(false);
+    setShowSpinner(false);
+    setShowHistory(false);
+    if (isTauri()) {
+      void invoke("cancel_search").catch((e) => console.error(e));
+    }
+  }
+
   return (
     <div
       className="relative"
@@ -234,7 +249,7 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
           aria-label={busy ? t("search.busy") : t("search.button")}
           title={busy ? t("search.busy") : t("search.button")}
         >
-          {busy ? (
+          {showSpinner ? (
             <span className="block size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
           ) : (
             <span className="block size-5 text-white">
@@ -242,47 +257,28 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
             </span>
           )}
         </button>
+        {busy ? (
+          <button
+            type="button"
+            className="shrink-0 h-11 w-11 flex items-center justify-center border-0 border-l border-black bg-red-600 text-white hover:bg-red-700 active:bg-red-800 transition-colors duration-150"
+            onClick={handleStopSearch}
+            aria-label={t("search.stop")}
+            title={t("search.stop")}
+          >
+            <span className="block size-4 text-white">
+              <StopIcon />
+            </span>
+          </button>
+        ) : null}
       </form>
 
       {historyVisible ? (
-        <div
-          className="absolute left-0 right-11 z-30 mt-2 max-h-56 overflow-y-auto rounded-xl border border-black bg-white shadow-md"
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          <div className="flex items-center justify-between gap-2 border-b border-[#e5e5e5] px-3 py-2 text-xs">
-            <span className="font-medium">{t("search.historyTitle")}</span>
-            <button
-              type="button"
-              className="underline hover:no-underline"
-              onClick={handleClearHistory}
-            >
-              {t("search.historyClear")}
-            </button>
-          </div>
-          <ul className="text-sm">
-            {history.map((item) => (
-              <li key={item} className="flex items-stretch border-b border-gray-100 last:border-b-0">
-                <button
-                  type="button"
-                  className="min-w-0 flex-1 truncate px-3 py-2 text-left hover:bg-black hover:text-white"
-                  onClick={() => handlePickHistory(item)}
-                  title={item}
-                >
-                  {item}
-                </button>
-                <button
-                  type="button"
-                  className="shrink-0 px-3 text-xs hover:bg-black hover:text-white"
-                  onClick={(e) => handleRemoveItem(item, e)}
-                  aria-label={t("search.historyRemove")}
-                  title={t("search.historyRemove")}
-                >
-                  ×
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <SearchHistoryDropdown
+          history={history}
+          onPick={handlePickHistory}
+          onClear={handleClearHistory}
+          onRemove={handleRemoveItem}
+        />
       ) : null}
 
       {error ? (

@@ -10,14 +10,16 @@ import {
   SEARCH_PAGE_SIZE,
   SEARCH_PAGINATION_HEIGHT_PX,
   SEARCH_RESULT_GRID,
-  SEARCH_ROW_HEIGHT_PX,
   pageSizeForListHeight,
   shouldRecalcPageSize,
 } from "../../lib/search_constants";
 import { cookieInvokeArgs } from "../../lib/cookies_prefs";
+import { friendlyError } from "../../lib/app_errors";
 import { extractYouTubeId } from "../../lib/youtube_id";
 import { formatCount, formatUploadDate } from "../../lib/preview_meta";
 import i18n from "../../i18n";
+import ResultRow from "./ResultRow";
+import PreviewPanel from "./PreviewPanel";
 
 export default function SearchResults({ open }) {
   const { t } = useTranslation();
@@ -210,7 +212,7 @@ export default function SearchResults({ open }) {
       navigate("/val");
     } catch (e) {
       console.error(e);
-      alert(typeof e === "string" ? e : e?.message || t("search.failed"));
+      alert(friendlyError(e, t));
     } finally {
       setConfiguring(false);
     }
@@ -232,7 +234,7 @@ export default function SearchResults({ open }) {
       navigate("/val");
     } catch (e) {
       console.error(e);
-      alert(typeof e === "string" ? e : e?.message || t("search.failed"));
+      alert(friendlyError(e, t));
     } finally {
       setConfiguring(false);
     }
@@ -254,45 +256,18 @@ export default function SearchResults({ open }) {
           </div>
           <div className="flex-1 min-h-0 overflow-hidden flex flex-col bg-white">
             <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-              {pageItems.map((item, index) => {
-                const active = index === curr;
-                return (
-                  <div
-                    key={videoKey(item) || index}
-                    style={{ height: SEARCH_ROW_HEIGHT_PX }}
-                    className={`${SEARCH_RESULT_GRID} relative border-b border-black text-sm shrink-0 box-border ${
-                      active ? "bg-black text-white" : "bg-white text-black hover:bg-black hover:text-white"
-                    }`}
-                    onMouseEnter={() => setCurr(index)}
-                  >
-                    <input
-                      type="checkbox"
-                      className="shrink-0 relative z-10 justify-self-start"
-                      checked={isBulkSelected(item)}
-                      onChange={(e) => {
-                        e.stopPropagation();
-                        toggleBulkItem(item);
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <p className="truncate min-w-0 text-left relative z-[1] pointer-events-none" title={item.title}>
-                      {item.title}
-                    </p>
-                    <p className="truncate min-w-0 text-left relative z-[1] pointer-events-none" title={item.uploader}>
-                      {item.uploader}
-                    </p>
-                    <p className="min-w-0 text-right tabular-nums relative z-[1] pointer-events-none">
-                      {item.duration}
-                    </p>
-                    <button
-                      type="button"
-                      className="absolute inset-0 z-[2]"
-                      aria-label={item.title}
-                      onClick={() => openResult(item)}
-                    />
-                  </div>
-                );
-              })}
+              {pageItems.map((item, index) => (
+                <ResultRow
+                  key={videoKey(item) || index}
+                  item={item}
+                  index={index}
+                  active={index === curr}
+                  selected={isBulkSelected(item)}
+                  onHover={setCurr}
+                  onToggleSelect={toggleBulkItem}
+                  onOpen={openResult}
+                />
+              ))}
             </div>
             <div
               style={{ minHeight: SEARCH_PAGINATION_HEIGHT_PX }}
@@ -317,9 +292,7 @@ export default function SearchResults({ open }) {
                       try {
                         await loadMoreSearch();
                       } catch (e) {
-                        alert(
-                          typeof e === "string" ? e : e?.message || t("search.failed"),
-                        );
+                        alert(friendlyError(e, t));
                       }
                     }}
                   >
@@ -338,118 +311,16 @@ export default function SearchResults({ open }) {
             </div>
           </div>
         </div>
-        <div
-          className={`w-72 shrink-0 flex min-h-0 flex-col overflow-hidden border-l border-black ${
-            open ? "hidden" : ""
-          }`}
-        >
-          {previewItem ? (
-            <div className="flex flex-col flex-1 min-h-0 p-3 gap-3">
-              <div className="w-full aspect-video overflow-hidden border border-black bg-[#eee] shrink-0">
-                {previewItem.thumbnail ? (
-                  <img
-                    src={previewItem.thumbnail}
-                    alt={t("search.thumbnail")}
-                    className="h-full w-full object-cover object-center"
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-xs text-[#555]">
-                    {t("search.thumbnail")}
-                  </div>
-                )}
-              </div>
-              <div className="min-h-0 flex-1 flex flex-col gap-2 overflow-hidden text-black">
-                <p className="text-[10px] uppercase tracking-wide text-[#555] shrink-0">
-                  {t("search.previewInfo")}
-                  {enrichingKey && enrichingKey === previewKey
-                    ? ` · ${t("search.previewEnriching")}`
-                    : ""}
-                </p>
-                <div className="space-y-1.5 overflow-y-auto min-h-0 pr-0.5">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-[#555]">
-                      {t("search.colTitle")}
-                    </p>
-                    <p className="text-sm font-medium leading-snug" title={previewItem.title}>
-                      {previewItem.title}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-[#555]">
-                      {t("search.colArtist")}
-                    </p>
-                    <p className="text-xs truncate" title={previewMeta?.channel}>
-                      {previewMeta?.channel || t("download.unknown")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-[#555]">
-                      {t("search.colDuration")}
-                    </p>
-                    <p className="text-xs tabular-nums">
-                      {previewItem.duration || t("download.unknown")}
-                      {previewMeta?.isLive ? ` · ${t("search.live")}` : ""}
-                    </p>
-                  </div>
-                  {previewMeta?.views ? (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#555]">
-                        {t("search.views")}
-                      </p>
-                      <p className="text-xs tabular-nums">{previewMeta.views}</p>
-                    </div>
-                  ) : null}
-                  {previewMeta?.likes ? (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#555]">
-                        {t("search.likes")}
-                      </p>
-                      <p className="text-xs tabular-nums">{previewMeta.likes}</p>
-                    </div>
-                  ) : null}
-                  {previewMeta?.uploaded ? (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#555]">
-                        {t("search.uploadDate")}
-                      </p>
-                      <p className="text-xs">{previewMeta.uploaded}</p>
-                    </div>
-                  ) : null}
-                  {previewMeta?.videoId ? (
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-[#555]">
-                        {t("search.videoId")}
-                      </p>
-                      <p className="text-xs font-mono truncate" title={previewMeta.videoId}>
-                        {previewMeta.videoId}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-                <div className="mt-auto flex flex-col gap-2 pt-2 shrink-0 border-t border-black/15">
-                  <p className="text-[10px] text-[#555] leading-snug">{t("search.previewNotFileMeta")}</p>
-                  <label className="flex items-center gap-2 text-xs cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={previewSelected}
-                      onChange={() => toggleBulkItem(previewItem)}
-                    />
-                    {t("search.addToSelection")}
-                  </label>
-                  <button
-                    type="button"
-                    disabled={configuring}
-                    onClick={() => openResult(previewItem)}
-                    className="w-full px-3 py-1.5 bg-black text-white text-sm hover:bg-[#dfdfdf] hover:text-black disabled:opacity-50"
-                  >
-                    {t("search.openResult")}
-                  </button>
-                  <p className="text-[10px] text-[#555] leading-snug">{t("search.previewHint")}</p>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
+        <PreviewPanel
+          item={previewItem}
+          meta={previewMeta}
+          enriching={enrichingKey && enrichingKey === previewKey}
+          selected={previewSelected}
+          configuring={configuring}
+          onToggleSelect={toggleBulkItem}
+          onOpen={openResult}
+          open={open}
+        />
       </div>
       {bulkSelection.length > 0 ? (
         <div className="shrink-0 flex items-center justify-between gap-3 px-3 py-2 border-t border-black bg-white">

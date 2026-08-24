@@ -17,6 +17,7 @@ import {
   saveQueueSnapshot,
 } from "../lib/queue_snapshot";
 import { isTauri } from "../lib/tauri_env";
+import { friendlyError } from "../lib/app_errors";
 
 const DownloadQueueContext = createContext({
   downloads: {},
@@ -86,11 +87,7 @@ export function DownloadQueueProvider({ children }) {
         registerDownloadConfig(processId, item.config);
       } catch (err) {
         remaining.push(item);
-        failures.push(
-          `${item.title || item.url}: ${
-            typeof err === "string" ? err : err?.message || "failed"
-          }`,
-        );
+        failures.push(`${item.title || item.url}: ${friendlyError(err)}`);
       }
     }
     if (remaining.length === 0) {

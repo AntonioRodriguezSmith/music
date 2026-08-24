@@ -66,9 +66,10 @@ export default function FolderPicker({
         <button
           type="button"
           className="shrink-0 text-xs font-normal leading-5 hover:underline"
-          onClick={openDownloadFolder}
+          onClick={handleSelectFolder}
+          title={t("folder.choosePath")}
         >
-          {t("sidebar.openFolder")}
+          {t("folder.choosePath")}
         </button>
       </div>
       {openPanel ? (
@@ -80,10 +81,10 @@ export default function FolderPicker({
           </p>
           <button
             type="button"
-            onClick={handleSelectFolder}
-            className="p-1.5 bg-black hover:bg-[#dfdfdf] hover:text-black text-white rounded-full px-3"
+            className="text-[10px] text-gray-600 leading-snug underline hover:text-black"
+            onClick={openDownloadFolder}
           >
-            {t("folder.choosePath")}
+            {t("sidebar.openFolder")}
           </button>
         </>
       ) : null}

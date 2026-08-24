@@ -6,18 +6,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath } from "@tauri-apps/plugin-opener";
-import Loader from "./loader";
 import Queue from "../svg/queue";
 import Folder from "../svg/folder";
-import CircularProgressBar from "../ui/circle_progress";
 import { isActive, isFinished } from "../../lib/download_status";
-import { setAppLanguage } from "../../i18n";
-import i18n from "../../i18n";
 import { QUEUE_PAGE_SIZE, HISTORY_PAGE_SIZE } from "../../lib/search_constants";
 import { useDownloadQueue } from "../../providers/download_queue_context";
 import { DownloadPathContext } from "../../providers/download_path_context";
 import { usePlayerSession } from "../../providers/player_session_context";
-import { videoKey } from "../../lib/youtube_id";
 import {
   clearDownloadHistory,
   exportDownloadHistoryText,
@@ -26,6 +21,10 @@ import {
 } from "../../lib/download_history";
 import { isTauri } from "../../lib/tauri_env";
 import UpdateChecker from "./update_checker";
+import SessionQueueList from "./sidebar/SessionQueueList";
+import QueueList from "./sidebar/QueueList";
+import HistoryList from "./sidebar/HistoryList";
+import SidebarCollapsed from "./sidebar/SidebarCollapsed";
 
 export default function SideBar({ open, setOpen, compact = false }) {
   const { t } = useTranslation();
@@ -56,7 +55,6 @@ export default function SideBar({ open, setOpen, compact = false }) {
   const [tab, setTab] = useState("queue");
   const [resuming, setResuming] = useState(false);
   const [playerKeepPath, setPlayerKeepPath] = useState("");
-  const lang = i18n.language?.startsWith("en") ? "en" : "es";
   const navigate = useNavigate();
   const homePath = compact ? "/player" : "/";
 
@@ -206,6 +204,11 @@ export default function SideBar({ open, setOpen, compact = false }) {
     URL.revokeObjectURL(url);
   }
 
+  function openQueueFromCollapsed() {
+    setOpen(true);
+    setTab("queue");
+  }
+
   return (
     <div className="relative flex shrink-0 h-full min-h-0">
       <div
@@ -217,33 +220,6 @@ export default function SideBar({ open, setOpen, compact = false }) {
           <Link to={homePath} className={`font-bold ${open ? "text-3xl" : "text-lg"}`}>
             CH
           </Link>
-          {open ? (
-            <div className="flex text-xs gap-1">
-              <button
-                type="button"
-                className={`px-1.5 py-0.5 border border-black rounded ${lang === "es" ? "bg-black text-white" : ""}`}
-                onClick={() => setAppLanguage("es")}
-              >
-                {t("sidebar.langEs")}
-              </button>
-              <button
-                type="button"
-                className={`px-1.5 py-0.5 border border-black rounded ${lang === "en" ? "bg-black text-white" : ""}`}
-                onClick={() => setAppLanguage("en")}
-              >
-                {t("sidebar.langEn")}
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="text-[10px] font-bold"
-              onClick={() => setAppLanguage(lang === "es" ? "en" : "es")}
-              title={lang === "es" ? "EN" : "ES"}
-            >
-              {lang === "es" ? t("sidebar.langEs") : t("sidebar.langEn")}
-            </button>
-          )}
         </div>
 
         <div className={`flex-1 flex flex-col min-h-0 overflow-hidden ${open ? "px-3 pb-3" : "p-1 items-center"}`}>
@@ -268,10 +244,7 @@ export default function SideBar({ open, setOpen, compact = false }) {
             <button
               type="button"
               className="size-8 my-2 shrink-0 relative"
-              onClick={() => {
-                setOpen(true);
-                setTab("queue");
-              }}
+              onClick={openQueueFromCollapsed}
               title={compact ? t("sidebar.tabSession") : t("sidebar.tabQueue")}
             >
               <Queue />
@@ -284,288 +257,74 @@ export default function SideBar({ open, setOpen, compact = false }) {
           )}
 
           {open && tab === "queue" && compact ? (
-            <>
-              <ul className="mt-1 flex flex-col flex-1 min-h-0 overflow-y-auto w-full gap-0">
-                {sessionQueue.length === 0 ? (
-                  <li className="text-xs text-[#555] py-2">{t("sidebar.sessionEmpty")}</li>
-                ) : (
-                  sessionQueue.map((item) => {
-                    const active = nowPlaying && videoKey(nowPlaying) === videoKey(item);
-                    return (
-                      <li
-                        key={item.id}
-                        className={`border-b border-black/15 py-1.5 px-0.5 text-xs flex gap-1 items-start ${
-                          active ? "bg-black text-white" : "hover:bg-[#f3f3f3]"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          className="flex-1 text-left min-w-0"
-                          onClick={() => void requestPlay(item, { force: true })}
-                        >
-                          <span className="block truncate font-medium">{item.title}</span>
-                          {active && (playerStatus === "caching" || playerStatus === "waiting") ? (
-                            <span className="block text-[10px] text-white/70">
-                              {playerStatus === "waiting"
-                                ? t("player.statusWaiting")
-                                : t("player.statusCaching")}
-                            </span>
-                          ) : null}
-                        </button>
-                        <button
-                          type="button"
-                          className={`shrink-0 text-[10px] underline ${active ? "text-white/80" : ""}`}
-                          onClick={() => removeFromSessionQueue(item.id)}
-                        >
-                          {t("player.remove")}
-                        </button>
-                      </li>
-                    );
-                  })
-                )}
-              </ul>
-              <div className="shrink-0 mt-2 space-y-1 border-t border-black/20 pt-2">
-                {sessionQueue.length > 0 ? (
-                  <button
-                    type="button"
-                    className="w-full text-left text-xs hover:underline"
-                    onClick={() => clearSessionQueue()}
-                  >
-                    {t("sidebar.clearSession")}
-                  </button>
-                ) : null}
-                {nowPlaying ? (
-                  <button
-                    type="button"
-                    className="w-full text-left text-xs hover:underline"
-                    onClick={() => void addToPlaylist(nowPlaying)}
-                  >
-                    {t("sidebar.saveNowPlaying")}
-                  </button>
-                ) : null}
-              </div>
-            </>
+            <SessionQueueList
+              sessionQueue={sessionQueue}
+              nowPlaying={nowPlaying}
+              playerStatus={playerStatus}
+              onPlay={(item) => void requestPlay(item, { force: true })}
+              onRemove={removeFromSessionQueue}
+              onClearSession={clearSessionQueue}
+              onSaveNowPlaying={(video) => void addToPlaylist(video)}
+            />
           ) : null}
 
           {open && tab === "queue" && !compact ? (
-            <>
-              {resumeItems.length > 0 ? (
-                <div className="shrink-0 mb-2 border border-black p-2 text-xs space-y-1 bg-[#f4f4f4]">
-                  <p>{t("sidebar.resumePending", { count: resumeItems.length })}</p>
-                  {resumeError ? (
-                    <p className="text-red-700 whitespace-pre-wrap break-words" role="alert">
-                      {t("sidebar.resumeFailed")}: {resumeError}
-                    </p>
-                  ) : null}
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="px-2 py-0.5 bg-black text-white disabled:opacity-50"
-                      disabled={resuming}
-                      onClick={handleResume}
-                    >
-                      {t("sidebar.retry")}
-                    </button>
-                    <button
-                      type="button"
-                      className="px-2 py-0.5 border border-black"
-                      disabled={resuming}
-                      onClick={dismissResume}
-                    >
-                      {t("sidebar.dismissResume")}
-                    </button>
-                  </div>
-                </div>
-              ) : null}
-              <ul className="mt-1 flex flex-col flex-1 min-h-0 overflow-y-auto w-full gap-0">
-                {pageEntries.length === 0 ? (
-                  <li className="text-xs text-[#555] py-2">{t("sidebar.queueEmpty")}</li>
-                ) : (
-                  pageEntries.map(([id, download]) => (
-                    <Loader key={id} id={id} download={download} />
-                  ))
-                )}
-              </ul>
-              <div className="shrink-0 mt-2 space-y-1 border-t border-black/20 pt-2">
-                {entries.length > QUEUE_PAGE_SIZE ? (
-                  <div className="flex items-center justify-between text-xs gap-1">
-                    <button
-                      type="button"
-                      disabled={page <= 0}
-                      className="disabled:opacity-40 px-1"
-                      onClick={() => setQueuePage((p) => Math.max(0, p - 1))}
-                    >
-                      {t("search.prev")}
-                    </button>
-                    <span>{t("sidebar.queuePage", { page: page + 1, total: totalPages })}</span>
-                    <button
-                      type="button"
-                      disabled={page >= totalPages - 1}
-                      className="disabled:opacity-40 px-1"
-                      onClick={() => setQueuePage((p) => Math.min(totalPages - 1, p + 1))}
-                    >
-                      {t("search.next")}
-                    </button>
-                  </div>
-                ) : null}
-                {hasCancellable ? (
-                  <button
-                    type="button"
-                    className="w-full text-left text-xs hover:underline"
-                    onClick={() => void cancelAllActive()}
-                  >
-                    {t("sidebar.cancelAll")}
-                  </button>
-                ) : null}
-                {hasFinished ? (
-                  <button
-                    type="button"
-                    className="w-full text-left text-xs hover:underline"
-                    onClick={() => invoke("clear_finished_downloads")}
-                  >
-                    {t("sidebar.clearFinished")}
-                  </button>
-                ) : null}
-              </div>
-            </>
+            <QueueList
+              resumeItems={resumeItems}
+              resumeError={resumeError}
+              resuming={resuming}
+              onResume={handleResume}
+              onDismissResume={dismissResume}
+              pageEntries={pageEntries}
+              page={page}
+              totalPages={totalPages}
+              onPrevPage={() => setQueuePage((p) => Math.max(0, p - 1))}
+              onNextPage={() => setQueuePage((p) => Math.min(totalPages - 1, p + 1))}
+              hasCancellable={hasCancellable}
+              onCancelAll={cancelAllActive}
+              hasFinished={hasFinished}
+              onClearFinished={() => invoke("clear_finished_downloads")}
+            />
           ) : null}
 
           {open && tab === "history" ? (
-            <>
-              <ul className="mt-1 flex flex-col flex-1 min-h-0 overflow-y-auto w-full gap-1">
-                {pageHistory.length === 0 ? (
-                  <li className="text-xs text-[#555] py-2">{t("sidebar.historyEmpty")}</li>
-                ) : (
-                  pageHistory.map((item) => (
-                    <li key={item.id} className="text-xs border-b border-black/10 py-1">
-                      <p className="truncate font-medium" title={item.title}>
-                        {item.title || t("download.titleFallback")}
-                      </p>
-                      <p className="truncate text-[10px] text-[#555]" title={item.filename}>
-                        {item.filename || new Date(item.finishedAt).toLocaleString()}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mt-0.5">
-                        {item.filename ? (
-                          <>
-                            <button
-                              type="button"
-                              className="text-[10px] underline"
-                              onClick={() => openHistoryFile(item.filename)}
-                            >
-                              {t("sidebar.openFile")}
-                            </button>
-                            <button
-                              type="button"
-                              className="text-[10px] underline"
-                              onClick={() => openHistoryFolder(item.filename)}
-                            >
-                              {t("sidebar.openHistoryFolder")}
-                            </button>
-                          </>
-                        ) : null}
-                        <button
-                          type="button"
-                          className="text-[10px] underline"
-                          onClick={() => setHistory(removeDownloadHistoryItem(item.id))}
-                        >
-                          {t("sidebar.removeHistoryItem")}
-                        </button>
-                      </div>
-                    </li>
-                  ))
-                )}
-              </ul>
-              <div className="shrink-0 mt-2 space-y-1 border-t border-black/20 pt-2">
-                {history.length > HISTORY_PAGE_SIZE ? (
-                  <div className="flex items-center justify-between text-xs gap-1">
-                    <button
-                      type="button"
-                      disabled={histPage <= 0}
-                      className="disabled:opacity-40 px-1"
-                      onClick={() => setHistoryPage((p) => Math.max(0, p - 1))}
-                    >
-                      {t("search.prev")}
-                    </button>
-                    <span>
-                      {t("sidebar.queuePage", { page: histPage + 1, total: historyTotalPages })}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={histPage >= historyTotalPages - 1}
-                      className="disabled:opacity-40 px-1"
-                      onClick={() =>
-                        setHistoryPage((p) => Math.min(historyTotalPages - 1, p + 1))
-                      }
-                    >
-                      {t("search.next")}
-                    </button>
-                  </div>
-                ) : null}
-                <button
-                  type="button"
-                  className="w-full text-left text-xs hover:underline"
-                  onClick={exportHistory}
-                >
-                  {t("sidebar.exportHistory")}
-                </button>
-                <button
-                  type="button"
-                  className="w-full text-left text-xs hover:underline"
-                  onClick={() => {
-                    setHistory(clearDownloadHistory());
-                    setHistoryPage(0);
-                  }}
-                >
-                  {t("search.historyClear")}
-                </button>
-                <button
-                  type="button"
-                  className="w-full text-left text-xs hover:underline"
-                  onClick={() => {
-                    navigate(homePath);
-                    if (!compact) {
-                      requestAnimationFrame(() => {
-                        setTimeout(() => document.getElementById("search")?.focus(), 50);
-                      });
-                    }
-                  }}
-                >
-                  {compact ? t("sidebar.focusPlayer") : t("search.historyTitle")}
-                </button>
-              </div>
-            </>
+            <HistoryList
+              pageHistory={pageHistory}
+              historyTotalPages={historyTotalPages}
+              histPage={histPage}
+              onPrevPage={() => setHistoryPage((p) => Math.max(0, p - 1))}
+              onNextPage={() => setHistoryPage((p) => Math.min(historyTotalPages - 1, p + 1))}
+              onOpenFile={openHistoryFile}
+              onOpenFolder={openHistoryFolder}
+              onRemove={(id) => setHistory(removeDownloadHistoryItem(id))}
+              onExport={exportHistory}
+              onClear={() => {
+                setHistory(clearDownloadHistory());
+                setHistoryPage(0);
+              }}
+              onFocusSearch={() => {
+                navigate(homePath);
+                if (!compact) {
+                  requestAnimationFrame(() => {
+                    setTimeout(() => document.getElementById("search")?.focus(), 50);
+                  });
+                }
+              }}
+              focusLabel={compact ? t("sidebar.focusPlayer") : t("search.historyTitle")}
+            />
           ) : null}
 
           {!open ? (
-            <ul className="flex flex-col items-center gap-1 flex-1 min-h-0 overflow-y-auto w-full">
-              {compact ? (
-                sessionQueue.slice(0, 6).map((item) => {
-                  const active = nowPlaying && videoKey(nowPlaying) === videoKey(item);
-                  return (
-                    <li key={item.id} className="w-full flex justify-center">
-                      <button
-                        type="button"
-                        title={item.title}
-                        className={`size-8 text-[9px] leading-none border border-black truncate px-0.5 ${
-                          active ? "bg-black text-white" : "bg-white"
-                        }`}
-                        onClick={() => {
-                          setOpen(true);
-                          setTab("queue");
-                          void requestPlay(item, { force: true });
-                        }}
-                      >
-                        {(item.title || "?").slice(0, 2)}
-                      </button>
-                    </li>
-                  );
-                })
-              ) : (
-                activeCollapsed.map(([id, download]) => (
-                  <CircularProgressBar key={id} download={download} />
-                ))
-              )}
-            </ul>
+            <SidebarCollapsed
+              compact={compact}
+              sessionQueue={sessionQueue}
+              nowPlaying={nowPlaying}
+              activeCollapsed={activeCollapsed}
+              onPlay={(item) => {
+                openQueueFromCollapsed();
+                void requestPlay(item, { force: true });
+              }}
+            />
           ) : null}
 
           <div
