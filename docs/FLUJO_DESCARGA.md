@@ -32,7 +32,7 @@ flowchart LR
 | Hueco | Impacto | Evidencia |
 |---|---|---|
 | Sink `devtools_log` no escribió en el relanzamiento | Bajo (solo dev) | [devtools_console.js](src/lib/devtools_console.js) guard `!isTauri() \|\| !import.meta.env.DEV`; `invoke` fire-and-forget con `.catch(()=>{})` traga errores. `scripts\devtools\logs\console` siguió en 242 líneas |
-| Cookies del `.env` de otro usuario | Medio | `CLIP_HARBOUR_COOKIES=C:\Users\rodri\...` no existe → warning "skipping cookies" cada arranque ([ytdlp.rs](src-tauri/src/ytdlp.rs) `append_cookie_args_lenient`) |
+| ~~Cookies del `.env` de otro usuario~~ | Medio | **FIX:** `.env` actualizado a `nexux`; el auto-refresh conserva el `cookies_merged.txt` previo si todos los navegadores fallan ([ytdlp.rs](src-tauri/src/ytdlp.rs) `append_cookie_args_lenient`) |
 | `clear_player_cache` fire-and-forget | Bajo | `PlayerSessionLifecycle` + `beforeunload`; si falla nadie se entera |
 
 **Análisis del hueco del sink:** el código está bien cableado (se instala antes de montar React). La ausencia de líneas en `scripts\devtools\logs\console` tras el relanzamiento es esperable: el primer binario que corrió con el dump de 242 líneas **aún no tenía** el comando `devtools_log`; el segundo rebuild ya lo tenía, pero con `plus.jsx` corregido el arranque limpio no emite `console.*` (React no imprime nada sin warnings). Para confirmar el sink hay que generar tráfico: lanzar una búsqueda/descarga (emiten `console.error` en fallos) o un `console.log` puntual. **Pendiente de verificar en vivo.**
@@ -154,13 +154,14 @@ stateDiagram-v2
 
 1. `start_download` ([queue.rs](src-tauri/src/queue.rs) 147-183): `process_id = PROCESS_COUNTER.fetch_add(1)` (clave del registry, no hay campo `id`). Si `busy >= 1` → registry `queued` + `pending_downloads.push_back`; si no, `run_download`.
 2. `schedule_pending` (215-227): gap de 2 s (soft) o 4 s (strict, env `CLIP_HARBOUR_YT_SLEEP`), luego `take_next_pending` (marca `starting`, emite `status`).
-3. `run_ytdlp_attempt` (252-385): `parse_config` arma args ([ytdlp.rs](src-tauri/src/ytdlp.rs) 520+): URL, `--newline`, `--progress-template %(progress)j`, `--progress`, `--no-playlist`, cookies (`--cookies`/`--cookies-from-browser`), anti-rate-limit (0.75/1.5/4s), `--ffmpeg-location`, `-P <dir> -o <template>` (audio: `%(track,title).200B.%(ext)s`; cache/playlist: `%(id)s.%(ext)s`; keep: `%(title).200B.%(ext)s`), `-f <format>`, `--embed-metadata` en audio, etc. La ruta del binario sale de `binaries::resolve("yt-dlp")` (embebido → `%LOCALAPPDATA%\clip_harbour\bin\`, o copia junto al exe) y se lanza con `ShellExt::command`; registra `CommandChild` en `process_registry`.
-4. Bucle `rx.recv().await`: cada línea JSON de `%(progress)j` → `merge_ytdlp_progress` (nunca confía en el `status` de yt-dlp; escala a 0-70% si habrá conversión) → `emit("status")`. Líneas con `ERROR` → status `error: <line>`.
-5. `Terminated`: exit 0 + `output_ext` → `downloaded` @70%; exit 0 sin `output_ext` → `finished` @100%; exit != 0 → error.
-6. Reintentos (`run_download` 387-440): `max_attempts = 3` si `download_has_cookies` si no 1; `can_retry = is_auth_block_error && attempt+1 < max_attempts`; `is_auth_block_error` matchea `403 | sign in to confirm | not a bot` ([ytdlp.rs](src-tauri/src/ytdlp.rs) 699).
-7. Conversión `convert_video` (552-744): si `output_ext` y no purpose cache/keep/playlist; binario ffmpeg (`binaries::resolve("ffmpeg")`) con (`-c:a aac 256k` m4a, `libmp3lame -q:a 0` mp3, `-map_metadata 0`), progreso por `out_time=` (parsea HH:MM:SS), escala 70-100% (`map_convert_pct`). Éxito → renombra a `output_path`, `finished` @100%, borra fuente + restos `.webm/.opus/.ogg/.m4a.part/.webm.part`.
-8. Frontend: `download_queue_context` escucha `status`, actualiza `downloads`, detecta transición a `finished` → historial (si no es cache/playlist); `loader.jsx` renderiza (barra, velocidad/ETA/tamaño, hint 403, botones pause/resume solo no-Windows, stop).
-9. Acciones: `stop_download` (quita de pending, `kill()`, `cancelled`, borra entrada a los 5 s); `pause/resume` solo Unix (SIGTSTP/SIGCONT); `clear_finished_downloads` (retain).
+3. `run_download` (387+): **sanitiza la carpeta de descarga** con `sanitize_download_dir` ([ytdlp.rs](src-tauri/src/ytdlp.rs)) — crea la ruta pedida y, si no es usable (permiso denegado o ruta de otro usuario tipo `C:\Users\rodri\…`), cae a `%USERPROFILE%\Music\ClipHarbour`. También auto-recupera una ruta de cookies inexistente o temporal (`cookies_raw_*`) antes de lanzar yt-dlp.
+4. `run_ytdlp_attempt` (252-385): `parse_config` arma args ([ytdlp.rs](src-tauri/src/ytdlp.rs) 520+): URL, `--newline`, `--progress-template %(progress)j`, `--progress`, `--no-playlist`, cookies (`--cookies`/`--cookies-from-browser`), anti-rate-limit (0.75/1.5/4s), `--ffmpeg-location`, `-P <dir> -o <template>` (audio: `%(track,title).200B.%(ext)s`; cache/playlist: `%(id)s.%(ext)s`; keep: `%(title).200B.%(ext)s`), `-f <format>`, `--embed-metadata` en audio, etc. La ruta del binario sale de `binaries::resolve("yt-dlp")` (embebido → `%LOCALAPPDATA%\clip_harbour\bin\`, o copia junto al exe) y se lanza con `ShellExt::command`; registra `CommandChild` en `process_registry`.
+5. Bucle `rx.recv().await`: cada línea JSON de `%(progress)j` → `merge_ytdlp_progress` (nunca confía en el `status` de yt-dlp; escala a 0-70% si habrá conversión) → `emit("status")`. Líneas con `ERROR` → status `error: <line>`.
+6. `Terminated`: exit 0 + `output_ext` → `downloaded` @70%; exit 0 sin `output_ext` → `finished` @100%; exit != 0 → error.
+7. Reintentos (`run_download` 387-440): `max_attempts = 3` si `download_has_cookies` si no 1; `can_retry = is_auth_block_error && attempt+1 < max_attempts`; `is_auth_block_error` matchea `403 | sign in to confirm | not a bot` ([ytdlp.rs](src-tauri/src/ytdlp.rs) 699).
+8. Conversión `convert_video` (552-744): si `output_ext` y no purpose cache/keep/playlist; binario ffmpeg (`binaries::resolve("ffmpeg")`) con (`-c:a aac 256k` m4a, `libmp3lame -q:a 0` mp3, `-map_metadata 0`), progreso por `out_time=` (parsea HH:MM:SS), escala 70-100% (`map_convert_pct`). Éxito → renombra a `output_path`, `finished` @100%, borra fuente + restos `.webm/.opus/.ogg/.m4a.part/.webm.part`.
+9. Frontend: `download_queue_context` escucha `status`, actualiza `downloads`, detecta transición a `finished` → historial (si no es cache/playlist); `loader.jsx` renderiza (barra, velocidad/ETA/tamaño, hint 403, botones pause/resume solo no-Windows, stop).
+10. Acciones: `stop_download` (quita de pending, `kill()`, `cancelled`, borra entrada a los 5 s); `pause/resume` solo Unix (SIGTSTP/SIGCONT); `clear_finished_downloads` (retain).
 
 ### Huecos detectados
 
@@ -197,7 +198,7 @@ flowchart TD
 ### Paso a paso
 
 1. `use_auto_refresh_cookies` ([use_auto_refresh_cookies.js](src/hooks/use_auto_refresh_cookies.js)): single-flight anti-StrictMode; `invoke("refresh_cookies_all")`; en éxito llama `onSuccess(path)` y **solo aplica si no hay elección manual** (`loadCookiePrefs().cookiesFile` vacío).
-2. `refresh_cookies_all` ([ytdlp.rs](src-tauri/src/ytdlp.rs) 557-571): itera `REFRESH_BROWSERS = ["firefox","chrome","edge"]`; primer éxito gana.
+2. `refresh_cookies_all` ([ytdlp.rs](src-tauri/src/ytdlp.rs) 557-571): itera `REFRESH_BROWSERS = ["firefox","chrome","edge"]`; primer éxito gana. Si todos fallan, **conserva el `cookies_merged.txt` previo** y devuelve su ruta (siempre queda un TXT funcional).
 3. `refresh_cookies_from` (573-620): `resolve_cookies_dir(None)` (309-331) con precedencia `dir` → `CLIP_HARBOUR_COOKIES_DIR` → `%USERPROFILE%\cookies_youtube` (si tiene `.txt`) → `%APPDATA%\com.clip-harbour.app\cookies`; borra `cookies_raw_<b>.txt` (yt-dlp no sobrescribe `--cookies`); corre yt-dlp `--cookies-from-browser <b> --cookies <tmp>` sin URL (exit no fiable, valida por archivo); `enrich_cookies` → `cookies_merged.txt`; borra tmp.
 4. `enrich_cookies` (465-540): `parse_cookie_line` (419-463) filtra dominios YT/Google (`is_youtube_domain` 405-416), normaliza flags (`TRUE` si dominio empieza por `.`), **descarta caducadas** (`expiry > 0 && expiry < now`), dedupe por `domain\tpath\tname` guardando la **expiry mayor**, valida sesión (SID/SSID/HSID/LOGIN_INFO/__Secure-3PSID), escribe con cabeceras y sin BOM. Si no hay sesión → error → `refresh_cookies_all` prueba el siguiente navegador.
 5. `use_auto_profile_cookies` ([use_auto_profile_cookies.js](src/hooks/use_auto_profile_cookies.js)): solo si `loadCookiePrefs().cookiesFile` está vacío; `list_cookie_candidates` (348-403) puntúa y devuelve rutas absolutas; prefiere `cookies_merged.txt`.
@@ -211,7 +212,7 @@ flowchart TD
 |---|---|---|
 | ~~**Auto-refresh pisa la elección manual**~~ | ~~Alto~~ | **FIX:** `useAutoRefreshCookies` solo aplica si `loadCookiePrefs().cookiesFile` está vacío |
 | `refresh_cookies_all` en cada arranque | Medio | Hasta 3 extracciones secuenciales en cada mount; fallo silencioso (sigue con archivo previo) |
-| **Multi-usuario**: env `rodri` vs auto-refresh `nexux` | Alto | `.env` con `CLIP_HARBOUR_COOKIES=C:\Users\rodri\...` inexistente → warning "skipping cookies"; el auto-refresh escribe en `%USERPROFILE%` de `nexux` |
+| ~~**Multi-usuario**: env `rodri` vs auto-refresh `nexux`~~ | Alto | **FIX:** `.env` actualizado a `nexux`; el auto-refresh conserva el `cookies_merged.txt` previo si todos los navegadores fallan |
 | ~~`enrich_cookies` no filtra cookies caducadas~~ | ~~Medio~~ | **FIX:** descarta `expiry > 0 && expiry < now` en `enrich_cookies` y en `prepare_cookie_file` (ruta manual) |
 | Mensaje de error y header Firefox-fijo | Bajo | "FireFox sin sesión?" y `# Source browser: <browser>` real, salvo el mensaje residual de sesión |
 | `prepare_cookie_file`/`sanitize_cookie_path` crea copias | Bajo | `<name>.nobom.txt` / `<name>.clean.txt` junto al original, acumulable |
@@ -225,7 +226,7 @@ flowchart TD
 4. ~~Ante auth-block con cookies, intentar `refresh_cookies` antes de reintentar la descarga.~~ **Implementado.**
 
 **Estado de los fixes (2026-08-23):**
-- **Implementado:** filtro de cookies caducadas en `enrich_cookies` (expiry > 0 y < now → descartada), validación de sesión (requiere SID/SSID/HSID/LOGIN_INFO/__Secure-3PSID; si no hay → error → `refresh_cookies_all` prueba el siguiente navegador), cabecera/error con el navegador real (`# Source browser: <browser>`), auto-refresh respeta elección manual, auto-refresh ante 403 en descarga, y `prepare_cookie_file` que limpia BOM + caducadas en la ruta manual. Tests: `enrich_cookies_drops_expired_and_keeps_session`, `enrich_cookies_rejects_without_session_cookie`, `enrich_drops_expired_st_cookies_like_session_logininfo`, `prepare_cookie_file_drops_expired_but_keeps_session`, `prepare_cookie_file_returns_same_path_when_nothing_expired` (19/19 en ytdlp).
+- **Implementado:** filtro de cookies caducadas en `enrich_cookies` (expiry > 0 y < now → descartada), validación de sesión (requiere SID/SSID/HSID/LOGIN_INFO/__Secure-3PSID; si no hay → error → `refresh_cookies_all` prueba el siguiente navegador), cabecera/error con el navegador real (`# Source browser: <browser>`), auto-refresh respeta elección manual, auto-refresh ante 403 en descarga, `prepare_cookie_file` que limpia BOM + caducadas en la ruta manual, y **fallback de `refresh_cookies_all` al `cookies_merged.txt` previo** cuando todos los navegadores fallan (siempre queda un TXT funcional). Tests: `enrich_cookies_drops_expired_and_keeps_session`, `enrich_cookies_rejects_without_session_cookie`, `enrich_drops_expired_st_cookies_like_session_logininfo`, `prepare_cookie_file_drops_expired_but_keeps_session`, `prepare_cookie_file_returns_same_path_when_nothing_expired` (19/19 en ytdlp).
 - **Pendiente:** parametrizar el navegador ganador en la cabecera/mensaje (fix 3).
 
 ## FASE 6 — Persistencia
@@ -255,7 +256,7 @@ flowchart LR
 
 | Hueco | Impacto | Evidencia |
 |---|---|---|
-| **El snapshot transporta `output_dir` inválido** (caso rodri/nexux) | **Alto** | `buildQueueSnapshot` serializa el `config` completo; `resumePending` re-lanza a rutas que pueden no existir |
+| **El snapshot transporta `output_dir` inválido** (caso rodri/nexux) | **Alto** | ~~`buildQueueSnapshot` serializa el `config` completo; `resumePending` re-lanza a rutas que pueden no existir~~ **FIX:** `run_download` sanitiza el `output_dir` con `sanitize_download_dir` antes de lanzar yt-dlp (cae a `%USERPROFILE%\Music\ClipHarbour`); el provider también valida la ruta persistida al arrancar (`resolve_download_dir`) |
 | Sin idempotencia: re-descarga de completados | Medio | No hay comprobación de si el archivo destino ya existe antes de reintentar |
 | Historial con dedupe parcial | Bajo | `pushDownloadHistory` dedupe solo por `title + filename`, nunca por URL; un mismo video con título distinto (tags) duplica |
 | Snapshot guardado con debounce 300 ms | Bajo | Un cierre antes del timer pierde el último estado |
@@ -264,7 +265,7 @@ flowchart LR
 
 ### Estado actual
 
-- 51 tests vitest (solo `src/lib`), Rust tests en `ytdlp.rs` (parse_config, cookies), `e2e/smoke.spec.js` (solo UI Vite, sin IPC Tauri), `smoke-windows.ps1` (sidecars + vitest).
+- 85 tests vitest (`src/lib` + hooks), Rust tests en `ytdlp.rs` y `queue.rs` (parse_config, cookies, escalas, resolve_download_path), `e2e/smoke.spec.js` (solo UI Vite, sin IPC Tauri), `smoke-windows.ps1` (binarios + `cargo test --lib`).
 - **No hay tests de `queue.rs`** (0 coincidencias `#[test]`) ni ninguna prueba que ejecute yt-dlp end-to-end.
 
 ### Funciones confirmadas testables
@@ -286,7 +287,7 @@ flowchart LR
 |---|---|---|
 | Unit Rust `queue.rs` (9 tests) | Implementado | `clamp_pct`, `parse_pct_str`, `map_download_pct`, `map_convert_pct`, `format_pct`, `merge_ytdlp_progress` (con/sin conversión), `resolve_download_path` (x2), `is_busy_status` |
 | Ampliar `ytdlp.rs` (6+ tests) | Implementado | `is_auth_block_error`, `download_has_cookies`, `append_cookie_args` estricto/lenient, `sanitize_cookie_path` con/sin BOM, `enrich_cookies` (caducadas + sesión + ST-*), `prepare_cookie_file` (con/sin caducadas) |
-| `cargo test --lib` | **27/27 OK** | Ejecutado con MSVC (setup-windows-env.ps1) |
+| `cargo test --lib` | **30/30 OK** | Ejecutado con MSVC (setup-windows-env.ps1) |
 | Vitest hooks | Implementado | Lógica single-flight extraída a [auto_cookies_flight.js](src/hooks/auto_cookies_flight.js) (testeable sin DOM); 3 tests |
 | `npm run test` | **85/85 OK** | 19 archivos (incluye `app_errors.test.js`) |
 | Script integración | Implementado | [test-download.ps1](scripts/test-download.ps1) + `npm run test:download` (opt-in, requiere red) |
@@ -298,12 +299,12 @@ flowchart LR
 
 | Problema | Detalle | Referencia |
 |---|---|---|
-| `output_dir` de otro usuario causa `WinError 5` | `C:\Users\rodri\Music\MEmu Music` (localStorage) mientras la app corre como `nexux` → `yt-dlp: ERROR: Unable to create directory: [WinError 5] Acceso denegado` | Fase 3 |
-| Cookies multi-usuario | `.env` `CLIP_HARBOUR_COOKIES=C:\Users\rodri\...` inexistente → warning "skipping cookies"; auto-refresh escribe en `%USERPROFILE%` de `nexux` | Fase 5 |
+| ~~`output_dir` de otro usuario causa `WinError 5`~~ | `C:\Users\rodri\Music\MEmu Music` (localStorage) mientras la app corre como `nexux` → `yt-dlp: ERROR: Unable to create directory: [WinError 5] Acceso denegado` **FIX 2026-08-24:** `sanitize_download_dir` + `resolve_download_dir` (backend y provider) | Fase 3 |
+| ~~Cookies multi-usuario~~ | `.env` `CLIP_HARBOUR_COOKIES=C:\Users\rodri\...` inexistente → warning "skipping cookies"; auto-refresh escribe en `%USERPROFILE%` de `nexux` **FIX 2026-08-24:** `.env` a `nexux` + fallback a `cookies_merged.txt` previo | Fase 5 |
 | Sink `devtools_log` sin escribir | `logs\console` siguió en 242 líneas (en `scripts\devtools\logs`); esperable porque el arranque limpio (con `plus.jsx` corregido) no emite `console.*` y el binario que hizo el dump aún no tenía el comando | Fase 1 |
 
 ## Verificaciones pendientes
 
 - Confirmar el sink `devtools_log` en vivo: lanzar una búsqueda/descarga (emite `console.error` en fallos) y ver `scripts\devtools\logs\console` crecer.
 - Ejecutar `npm run test:download` (requiere red) para validar yt-dlp + ffmpeg end-to-end.
-- Reproducir el `WinError 5` con el `output_dir` inválido persistido para confirmar el fix propuesto (validar la ruta en `download_path_context`/`download_config`).
+- ~~Reproducir el `WinError 5` con el `output_dir` inválido persistido para confirmar el fix propuesto (validar la ruta en `download_path_context`/`download_config`).~~ **FIX verificado 2026-08-24:** `sanitize_download_dir` en `run_download` + `resolve_download_dir` en el provider; la app corrió con `%USERPROFILE%\Music\ClipHarbour` creado.

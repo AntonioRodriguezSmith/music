@@ -63,7 +63,7 @@ CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)): Windows smoke al
 | Download pipeline: `--ffmpeg-location`, format fallbacks, stderr handling | More reliable merges on Windows. |
 | Serde defaults / checkbox false filtering | Avoid IPC failures from empty paths or unchecked options. |
 | Window `label: "main"` + `withGlobalTauri` | Capabilities bind to the main window; easier debugging. |
-| Capabilities: shell spawn/execute for sidecars + `core:event` | Allow yt-dlp/ffmpeg sidecars under Tauri 2 ACL. |
+| Capabilities: shell spawn/execute for sidecars + `core:event` | yt-dlp/ffmpeg lanzados por ruta resuelta (`ShellExt::command`); los permisos ACL legacy se mantienen por compatibilidad. |
 | `ytsearch50` (+ load more → 100) | Larger search batch; UI paginates with a **frozen** page size (8–30) measured once per search. |
 | Active search cancel (`active_search` / `active_search_id`) | New query kills the previous yt-dlp search process. |
 | Download status codes normalized (`starting`, `converting`, `finished`, …) | Stable keys for i18n. |
@@ -96,8 +96,8 @@ CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)): Windows smoke al
 | `scripts/tauri-windows.ps1` | Wraps `tauri` CLI so `npm run tauri -- dev` works from IDE terminals. |
 | `dev-windows.ps1` | Loads MSVC, prefers system SDK `INCLUDE`, sets `CARGO_TARGET_DIR` under `%LOCALAPPDATA%` (avoids Proton Drive / synced folders). |
 | `.vscode/settings.json` | Prepends `.cargo\bin` to integrated terminal PATH. |
-| `scripts/fetch-windows-sidecars.ps1` | Fetches Windows `yt-dlp.exe` + `ffmpeg.exe` with correct sidecar filenames. |
-| `scripts/smoke-windows.ps1` | Smoke: sidecar presence/`--version` + `vitest`. |
+| `scripts/fetch-windows-sidecars.ps1` | Fetches Windows `yt-dlp.exe` + `ffmpeg.exe` with correct sidecar filenames (used to build; embedded at compile time). |
+| `scripts/smoke-windows.ps1` | Smoke: binary presence/`--version` + `cargo test --lib` + `vitest`. |
 | `scripts/launch-clip-harbour.vbs` / `.ps1` | Silent splash launcher (no console); see [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md). |
 | `assets/clip-harbour-app-icon.png` / `.ico` | Splash + desktop shortcut icon. |
 | `src/lib/format_details.js` | Shared format labels, key-data rows, audio/video codec display helpers. |
@@ -118,7 +118,7 @@ CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)): Windows smoke al
 
 - **Pause / resume** downloads: not supported on Windows (Unix signals only).
 - **Upstream GitHub releases**: still Linux-oriented. This fork can produce local Windows MSI/NSIS via `npm run tauri -- build` (unsigned).
-- Do not commit large `*-pc-windows-msvc.exe` sidecars; fetch them with the script.
+- No commit large `*-pc-windows-msvc.exe` sidecars; the release exe embeds them (`src-tauri/src/binaries.rs`) and extracts to `%LOCALAPPDATA%\clip_harbour\bin\` on first run. Fetch them locally with `npm run fetch:sidecars:windows` before building.
 - Search shows up to **50** hits (`ytsearch50`), optional load more to **100**; **rows per page** are measured once when results appear (8–30) and stay fixed until the next search. Format list uses **12** per page. Queue sidebar uses **6** per page. Dev launch: `npm run tauri -- dev` (no desktop icon until you build/install).
 - Window uses `transparent: true` with frameless chrome + CSS radius/shadow (for rounded shell); not a see-through UI.
 - Custom title bar relies on window capabilities; without them, drag/min/max/close will fail.
