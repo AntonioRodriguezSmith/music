@@ -14,6 +14,11 @@
     "settings": "Settings",
     "cancel": "Cancel",
     "ok": "OK",
+    "storage": "Storage (app-managed)",
+    "downloadDir": "Download folder",
+    "keepDir": "Playback library",
+    "cookiesDir": "Cookies",
+    "storageUnavailable": "Could not resolve the app folders.",
     "settingsHint": "On mobile, music is downloaded inside the app (document_dir). Playback runs in the foreground; background playback will be added later."
   },
   "player": {

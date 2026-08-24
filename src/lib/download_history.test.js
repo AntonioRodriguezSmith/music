@@ -64,4 +64,11 @@ describe("download_history", () => {
     expect(parentDirOf("C:\\Users\\x\\Music\\song.m4a")).toBe("C:\\Users\\x\\Music");
     expect(parentDirOf("")).toBeNull();
   });
+
+  it("parentDirOf handles posix paths (mobile)", () => {
+    expect(parentDirOf("/storage/emulated/0/Music/song.m4a")).toBe(
+      "/storage/emulated/0/Music",
+    );
+    expect(parentDirOf("song.m4a")).toBeNull();
+  });
 });

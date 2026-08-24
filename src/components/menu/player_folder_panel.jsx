@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { openPath } from "@tauri-apps/plugin-opener";
-import { isTauri } from "../../lib/tauri_env";
+import { openExternalPath } from "../../lib/open_path";
+import { isMobile, isTauri } from "../../lib/tauri_env";
 
 /** Read-only Player media folder (keep dir). Path comes from Rust / env. */
 export default function PlayerFolderPanel() {
@@ -33,7 +33,7 @@ export default function PlayerFolderPanel() {
       return;
     }
     try {
-      await openPath(path);
+      await openExternalPath(path);
     } catch (e) {
       console.error(e);
       const message =
@@ -56,13 +56,15 @@ export default function PlayerFolderPanel() {
           </span>
           <span className="truncate">{t("sidebar.setPlayerFolder")}</span>
         </button>
-        <button
-          type="button"
-          className="shrink-0 text-xs font-normal leading-5 hover:underline"
-          onClick={openPlayerFolder}
-        >
-          {t("sidebar.openFolder")}
-        </button>
+        {!isMobile() ? (
+          <button
+            type="button"
+            className="shrink-0 text-xs font-normal leading-5 hover:underline"
+            onClick={openPlayerFolder}
+          >
+            {t("sidebar.openFolder")}
+          </button>
+        ) : null}
       </div>
       {openPanel ? (
         <p className="text-gray-600 truncate" title={playerPath || undefined}>

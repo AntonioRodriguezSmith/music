@@ -1,4 +1,5 @@
 mod binaries;
+mod files;
 mod models;
 mod errors;
 #[cfg(any(debug_assertions, mobile))]
@@ -129,6 +130,9 @@ pub fn run() {
             refresh_cookies,
             refresh_cookies_all,
             resolve_download_dir,
+            files::open_path,
+            files::pick_download_dir,
+            files::mobile_default_dirs,
             #[cfg(debug_assertions)]
             devtools_log,
             // Player cache/playlists (imports behind the gate above): desktop

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open } from "@tauri-apps/plugin-dialog";
-import { openPath } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
 import { loadCookiePrefs, saveCookiePrefs } from "../../lib/cookies_prefs";
 import { friendlyError } from "../../lib/app_errors";
+import { openExternalPath } from "../../lib/open_path";
 import { singleFlight } from "../../hooks/auto_cookies_flight";
 import { useVideo } from "../../providers/video_context";
 import { useAutoRefreshCookies } from "../../hooks/use_auto_refresh_cookies";
@@ -104,7 +104,7 @@ export default function CookiesSettings() {
   async function openCookiesFolder() {
     try {
       const dir = await invoke("cookies_dir");
-      if (dir) openPath(dir);
+      if (dir) openExternalPath(dir);
     } catch (e) {
       console.error(e);
       alert(t("sidebar.openFolderFailed"));
@@ -151,7 +151,7 @@ export default function CookiesSettings() {
               <button
                 type="button"
                 className="text-[10px] text-green-700 underline hover:text-black shrink-0"
-                onClick={() => openPath(lastRefreshPath)}
+                onClick={() => openExternalPath(lastRefreshPath)}
               >
                 {t("sidebar.openFile")}
               </button>

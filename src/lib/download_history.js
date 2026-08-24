@@ -60,17 +60,23 @@ export function removeDownloadHistoryItem(id) {
 }
 
 /**
- * Parent directory of a file path (Windows or POSIX separators).
+ * Parent directory of a file path. Windows separators (`\`) are preserved for
+ * Windows paths; POSIX paths (`/`) return POSIX parents, so the helper works on
+ * Android (`/storage/emulated/0/...`) and Windows alike.
  * @param {string | null | undefined} filePath
  * @returns {string | null}
  */
 export function parentDirOf(filePath) {
   const p = String(filePath || "").trim();
   if (!p) return null;
-  const normalized = p.replace(/\//g, "\\");
-  const idx = normalized.lastIndexOf("\\");
+  if (p.includes("\\")) {
+    const idx = p.lastIndexOf("\\");
+    if (idx <= 0) return null;
+    return p.slice(0, idx);
+  }
+  const idx = p.lastIndexOf("/");
   if (idx <= 0) return null;
-  return normalized.slice(0, idx);
+  return p.slice(0, idx);
 }
 
 /** @param {HistoryItem[]} items */

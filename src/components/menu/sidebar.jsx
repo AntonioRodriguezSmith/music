@@ -5,7 +5,6 @@ import { useState, useEffect, useMemo, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { openPath } from "@tauri-apps/plugin-opener";
 import Queue from "../svg/queue";
 import Folder from "../svg/folder";
 import { isActive, isFinished } from "../../lib/download_status";
@@ -19,6 +18,7 @@ import {
   parentDirOf,
   removeDownloadHistoryItem,
 } from "../../lib/download_history";
+import { openExternalPath } from "../../lib/open_path";
 import { isMobile, isTauri } from "../../lib/tauri_env";
 import UpdateChecker from "./update_checker";
 import SessionQueueList from "./sidebar/SessionQueueList";
@@ -97,7 +97,7 @@ export default function SideBar({ open, setOpen, compact = false }) {
       return;
     }
     try {
-      await openPath(path);
+      await openExternalPath(path);
     } catch (e) {
       console.error(e);
       const message =
@@ -150,7 +150,7 @@ export default function SideBar({ open, setOpen, compact = false }) {
       return;
     }
     try {
-      await openPath(path);
+      await openExternalPath(path);
     } catch (e) {
       console.error(e);
       const message =
@@ -167,7 +167,7 @@ export default function SideBar({ open, setOpen, compact = false }) {
       return;
     }
     try {
-      await openPath(dir);
+      await openExternalPath(dir);
     } catch (e) {
       console.error(e);
       const message =

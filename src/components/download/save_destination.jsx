@@ -1,8 +1,8 @@
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { open } from "@tauri-apps/plugin-dialog";
-import { openPath } from "@tauri-apps/plugin-opener";
+import { invoke } from "@tauri-apps/api/core";
 import { DownloadPathContext } from "../../providers/download_path_context";
+import { openExternalPath } from "../../lib/open_path";
 import { isTauri } from "../../lib/tauri_env";
 
 /**
@@ -19,9 +19,7 @@ export default function FolderPicker({
 
   async function handleSelectFolder() {
     try {
-      const folder = await open({
-        directory: true,
-        multiple: false,
+      const folder = await invoke("pick_download_dir", {
         title: t(dialogTitleKey),
       });
       if (folder) {
@@ -40,7 +38,7 @@ export default function FolderPicker({
       return;
     }
     try {
-      await openPath(path);
+      await openExternalPath(path);
     } catch (e) {
       console.error(e);
       const message =

@@ -14,6 +14,11 @@
     "settings": "Ajustes",
     "cancel": "Cancelar",
     "ok": "OK",
+    "storage": "Almacenamiento (gestionado por la app)",
+    "downloadDir": "Carpeta de descargas",
+    "keepDir": "Biblioteca de reproducción",
+    "cookiesDir": "Cookies",
+    "storageUnavailable": "No se pudieron resolver las carpetas de la app.",
     "settingsHint": "En móvil la música se descarga dentro de la app (document_dir). La reproducción funciona en primer plano; el segundo plano se añadirá más adelante."
   },
   "player": {
