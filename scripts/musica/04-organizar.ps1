@@ -30,7 +30,15 @@
   que quedan vacias se eliminan (excluye "otros" y ".duplicados").
 
   Los nombres de carpeta se limpian igual que los nombres de archivo del resto
-  del flujo: sin acentos y sin caracteres invalidos de Windows.
+  del flujo: sin acentos y sin caracteres invalidos de Windows, y se normalizan
+  a Titulo Capitalizado (p.ej. "Tali Goya") para que variantes de caja del mismo
+  artista (TALI, Tali, TALI GOYA) converjan en una sola carpeta. Si ya existe
+  una carpeta con el mismo nombre (sin distincion de mayusculas), se adopta su
+  nombre real (p.ej. "DAPS").
+
+  Si dos archivos con el mismo nombre caen en la misma carpeta destino (p.ej.
+  una copia en la raiz y otra en "otros"), el segundo se mueve como
+  "Nombre (2).ext" en vez de fallar con "destino ya existe".
 
   Por defecto es un ENSAYO (no mueve nada). Usa -Apply para aplicar.
 
@@ -65,6 +73,14 @@ function ConvertTo-SafeFolder([string]$s) {
   return $n.Trim().TrimEnd('.').Trim()
 }
 
+function ConvertTo-TitleCase([string]$s) {
+  # Normaliza la caja del nombre de carpeta para que variantes del mismo artista
+  # (TALI, Tali, TALI GOYA) converjan en una sola (Tali, Tali Goya).
+  if (-not $s) { return $s }
+  $ci = [Globalization.CultureInfo]'en-US'
+  return $ci.TextInfo.ToTitleCase($s.ToLowerInvariant())
+}
+
 function Get-FirstArtist([string]$s) {
   if (-not $s) { return '' }
   $t = ConvertTo-CleanMeta $s
@@ -83,8 +99,18 @@ function Get-ArtistFolder([string]$artist) {
   if (-not $artist) { return '' }
   $a = Get-FirstArtist $artist
   $a = ConvertTo-StripAccents $a
+  $a = ConvertTo-TitleCase $a
   $a = ConvertTo-SafeFolder $a
   return $a
+}
+
+function Resolve-ExistingFolder([string]$dir, [string]$name) {
+  # Si ya existe una carpeta con ese nombre (comparacion sin distincion de
+  # mayusculas), adopta su nombre real para no duplicarla (p.ej. "DAPS").
+  $match = Get-ChildItem -LiteralPath $dir -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -ieq $name } | Select-Object -First 1
+  if ($match) { return $match.Name }
+  return $name
 }
 
 function Get-NameArtist([string]$baseName) {
@@ -148,6 +174,7 @@ foreach ($f in $files) {
 $moves = New-Object System.Collections.Generic.List[object]
 $already = 0
 $noArtist = 0
+$claimed = @{}
 
 foreach ($item in $fileInfo) {
   $f = $item.File
@@ -166,6 +193,8 @@ foreach ($item in $fileInfo) {
   if ($targetFolder -eq 'otros' -and -not $folder -and -not $nameFolder) {
     $noArtist++
   }
+  # Adopta el nombre real de una carpeta ya existente para no duplicarla.
+  $targetFolder = Resolve-ExistingFolder $dir $targetFolder
   $destDir = Join-Path $dir $targetFolder
   $sameDir = [string]::Equals([IO.Path]::GetFullPath($f.DirectoryName), [IO.Path]::GetFullPath($destDir), [StringComparison]::OrdinalIgnoreCase)
   if ($sameDir) {
@@ -175,10 +204,11 @@ foreach ($item in $fileInfo) {
   $baseName = [IO.Path]::GetFileNameWithoutExtension($f.Name)
   $destPath = Join-Path $destDir $f.Name
   $n = 2
-  while ([IO.File]::Exists($destPath) -or [IO.Directory]::Exists($destPath)) {
+  while ([IO.File]::Exists($destPath) -or [IO.Directory]::Exists($destPath) -or $claimed.ContainsKey($destPath.ToLowerInvariant())) {
     $destPath = Join-Path $destDir ('{0} ({1}){2}' -f $baseName, $n, $f.Extension)
     $n++
   }
+  $claimed[$destPath.ToLowerInvariant()] = $true
   $moves.Add([pscustomobject]@{
     Src   = $f.FullName
     Name  = $f.Name
