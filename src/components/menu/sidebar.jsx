@@ -19,7 +19,7 @@ import {
   parentDirOf,
   removeDownloadHistoryItem,
 } from "../../lib/download_history";
-import { isTauri } from "../../lib/tauri_env";
+import { isMobile, isTauri } from "../../lib/tauri_env";
 import UpdateChecker from "./update_checker";
 import SessionQueueList from "./sidebar/SessionQueueList";
 import QueueList from "./sidebar/QueueList";
@@ -346,7 +346,7 @@ export default function SideBar({ open, setOpen, compact = false }) {
                   <FolderPicker />
                 )}
                 <CookiesSettings />
-                {!compact ? <UpdateChecker /> : null}
+                {!compact && !isMobile() ? <UpdateChecker /> : null}
               </>
             ) : (
               <button
