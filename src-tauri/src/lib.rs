@@ -11,7 +11,9 @@ use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 use tauri::async_runtime::Mutex;
-use tauri::{Manager, PhysicalPosition, PhysicalSize, Position, Size};
+use tauri::Manager;
+#[cfg(desktop)]
+use tauri::{PhysicalPosition, PhysicalSize, Position, Size};
 use tauri_plugin_shell::process::CommandChild;
 
 use models::Download;
@@ -54,6 +56,8 @@ fn devtools_log(level: String, line: String) -> Result<(), String> {
 }
 
 /// Open at 75% of the current monitor, centered (not maximized/fullscreen).
+/// Desktop-only: Android has no windowing API (unmaximize does not exist).
+#[cfg(desktop)]
 fn size_main_window_to_monitor(app: &tauri::App) {
     let Some(window) = app.get_webview_window("main") else {
         return;
@@ -76,6 +80,7 @@ fn size_main_window_to_monitor(app: &tauri::App) {
 pub fn run() {
     let builder = tauri::Builder::default()
         .setup(|app| {
+            #[cfg(not(target_os = "android"))]
             if let Err(e) = binaries::ensure() {
                 eprintln!("binaries::ensure: {e}");
             }
@@ -86,6 +91,7 @@ pub fn run() {
                 active_search: Arc::new(std::sync::Mutex::new(None)),
                 active_search_id: Arc::new(AtomicU64::new(0)),
             });
+            #[cfg(desktop)]
             size_main_window_to_monitor(app);
             Ok(())
         })

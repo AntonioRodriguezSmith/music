@@ -4,7 +4,6 @@ use std::sync::{MutexGuard, PoisonError};
 
 use tauri::Emitter;
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
-use tauri_plugin_shell::ShellExt;
 use tokio::time::{sleep, Duration};
 
 use crate::binaries;
@@ -261,8 +260,9 @@ async fn run_ytdlp_attempt(
     #[cfg(debug_assertions)]
     eprintln!("yt-dlp args: {args:?}");
 
-    let sidecar_command = match binaries::resolve("yt-dlp") {
-        Ok(path) => app.shell().command(path).args(args),
+    let sidecar_command = match binaries::resolve(&app, "yt-dlp").and_then(|bin| bin.shell_command(&app))
+    {
+        Ok(cmd) => cmd.args(args),
         Err(e) => {
             return Err(format!("error:yt-dlp: {e}"));
         }
@@ -618,8 +618,9 @@ async fn convert_video(
     }
 
     let args = ffmpeg_convert_args(&input_path, &output_path);
-    let sidecar_command = match binaries::resolve("ffmpeg") {
-        Ok(path) => app.shell().command(path).args(args),
+    let sidecar_command = match binaries::resolve(&app, "ffmpeg").and_then(|bin| bin.shell_command(&app))
+    {
+        Ok(cmd) => cmd.args(args),
         Err(e) => {
             eprintln!("ffmpeg: {e}");
             let snapshot = {
@@ -839,7 +840,7 @@ pub async fn clear_finished_downloads(app: tauri::AppHandle) {
 
 #[tauri::command]
 pub async fn pause_download(app: tauri::AppHandle, id: usize) -> Result<(), String> {
-    #[cfg(unix)]
+    #[cfg(all(unix, not(target_os = "android")))]
     {
         use nix::sys::signal::{kill, Signal};
         use nix::unistd::Pid;
@@ -863,7 +864,7 @@ pub async fn pause_download(app: tauri::AppHandle, id: usize) -> Result<(), Stri
         Ok(())
     }
 
-    #[cfg(not(unix))]
+    #[cfg(not(all(unix, not(target_os = "android"))))]
     {
         let _ = (app, id);
         Err("pause_download is not supported on this platform".to_string())
@@ -872,7 +873,7 @@ pub async fn pause_download(app: tauri::AppHandle, id: usize) -> Result<(), Stri
 
 #[tauri::command]
 pub async fn resume_download(app: tauri::AppHandle, id: usize) -> Result<(), String> {
-    #[cfg(unix)]
+    #[cfg(all(unix, not(target_os = "android")))]
     {
         use nix::sys::signal::{kill, Signal};
         use nix::unistd::Pid;
@@ -895,7 +896,7 @@ pub async fn resume_download(app: tauri::AppHandle, id: usize) -> Result<(), Str
         Ok(())
     }
 
-    #[cfg(not(unix))]
+    #[cfg(not(all(unix, not(target_os = "android"))))]
     {
         let _ = (app, id);
         Err("resume_download is not supported on this platform".to_string())

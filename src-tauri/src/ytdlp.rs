@@ -14,7 +14,6 @@ use std::sync::atomic::Ordering;
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 use tauri_plugin_shell::process::CommandEvent;
-use tauri_plugin_shell::ShellExt;
 
 use crate::binaries;
 use crate::errors::AppError;
@@ -617,9 +616,9 @@ async fn refresh_cookies_from(
     let _ = std::fs::remove_file(&tmp);
 
     let tmp_str = tmp.to_string_lossy().into_owned();
-    let extracted = app
-        .shell()
-        .command(binaries::resolve("yt-dlp")?)
+    let extracted = binaries::resolve(&app, "yt-dlp")
+        .and_then(|bin| bin.shell_command(&app))
+        .map_err(|e| format!("yt-dlp: {e}"))?
         .args(["--cookies-from-browser", browser, "--cookies", tmp_str.as_str()])
         .output()
         .await;
@@ -996,9 +995,9 @@ pub fn is_auth_block_error(message: &str) -> bool {
 
 #[tauri::command(rename_all = "snake_case")]
 pub async fn get_ytdlp_version(app: tauri::AppHandle) -> Result<String, String> {
-    let sidecar_command = app
-        .shell()
-        .command(binaries::resolve("yt-dlp")?)
+    let sidecar_command = binaries::resolve(&app, "yt-dlp")
+        .and_then(|bin| bin.shell_command(&app))
+        .map_err(|e| format!("yt-dlp: {e}"))?
         .args(["--version"]);
     let output = sidecar_command
         .output()
@@ -1068,9 +1067,9 @@ pub async fn get_top_search(
         cookies_file.as_deref(),
         cookies_from_browser.as_deref(),
     );
-    let sidecar_command = app
-        .shell()
-        .command(binaries::resolve("yt-dlp")?)
+    let sidecar_command = binaries::resolve(&app, "yt-dlp")
+        .and_then(|bin| bin.shell_command(&app))
+        .map_err(|e| format!("yt-dlp: {e}"))?
         .args(args);
     let (mut rx, child) = sidecar_command
         .spawn()
@@ -1208,15 +1207,15 @@ pub async fn get_url_details(
         cookies_file.as_deref(),
         cookies_from_browser.as_deref(),
     );
-    let sidecar_command = app
-        .shell()
-        .command(binaries::resolve("yt-dlp").map_err(|e| {
+    let sidecar_command = binaries::resolve(&app, "yt-dlp")
+        .and_then(|bin| bin.shell_command(&app))
+        .map_err(|e| {
             AppError::with_detail(
                 crate::errors::codes::YTDLP_SPAWN,
                 "No se pudo lanzar yt-dlp. Comprueba que esté disponible.",
                 e,
             )
-        })?)
+        })?
         .args(args);
 
     let output = sidecar_command
