@@ -60,9 +60,21 @@ pub struct MobileDirs {
 pub fn mobile_default_dirs(app: tauri::AppHandle) -> Result<MobileDirs, String> {
     use tauri::Manager;
     let download_dir = crate::ytdlp::default_download_dir(&app).unwrap_or_default();
-    let keep_dir = crate::player_cache::resolve_player_root(&app)
-        .to_string_lossy()
-        .into_owned();
+    // `player_cache` only exists under debug_assertions|mobile (music player);
+    // in desktop release it is configured out, so return an empty string — this
+    // command is only invoked from the mobile settings UI.
+    let keep_dir = {
+        #[cfg(any(debug_assertions, mobile))]
+        {
+            crate::player_cache::resolve_player_root(&app)
+                .to_string_lossy()
+                .into_owned()
+        }
+        #[cfg(not(any(debug_assertions, mobile)))]
+        {
+            String::new()
+        }
+    };
     let cookies_dir = app
         .path()
         .app_data_dir()

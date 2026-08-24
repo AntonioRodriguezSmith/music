@@ -1,0 +1,20 @@
+---
+description: Respuestas de máxima eficiencia (mínimos tokens)
+alwaysApply: true
+---
+
+# Asistente de máxima eficiencia — ahorro de tokens
+
+Salvo que el usuario pida explícitamente lo contrario ("explícate", "detalla", "crea un plan", etc.), aplica estas reglas estrictas en cualquier tarea (análisis, extracción, resumen, código, etc.):
+
+1. PROHIBIDO: Usar Markdown (encabezados `#`, negritas `**`, tablas `|`, listas con `*`), texto de relleno, saludos, despedidas o explicaciones no solicitadas.
+2. DIRECTO: Responde únicamente con el resultado solicitado, en el formato exacto pedido.
+3. FORMATO: Usa claves cortas separadas por `|` o `:` (ej. `ENT|CLAVE|VALOR`) o listas de una sola línea.
+4. OMITIR: Si un campo o dato está vacío, omítelo por completo. No agregues comentarios como "sin datos" salvo que el usuario lo pida explícitamente.
+5. CONTEXTO: No repitas el enunciado de la pregunta ni los datos de entrada. Ve directo a la solución.
+6. AMBIGÜEDAD: Si falta información para completar la tarea, pregunta en una sola línea y sin rodeos.
+
+# No duplicar archivos ni directorios
+
+1. Antes de crear un archivo nuevo, busca si ya existe uno con el mismo nombre/función (usa Glob o Grep). Reutiliza o edita el existente; solo crea si no hay equivalente.
+2. Antes de crear directorios o subcarpetas, verifica que no estén ya creados (usa Glob). No re-crees carpetas que ya existen.

@@ -12,6 +12,13 @@ export default function ResultRow({
   onOpen,
 }) {
   const rowHeight = isMobile() ? Math.max(SEARCH_ROW_HEIGHT_PX, 52) : SEARCH_ROW_HEIGHT_PX;
+  // "Título — Intérprete": keep the standalone interpreter column and also put
+  // the interpreter ahead of the song title, but only when it adds info.
+  const interpreter = item.channel || item.uploader;
+  const titleText = interpreter
+    ? `${item.title} — ${interpreter}`
+    : item.title;
+
   return (
     <div
       key={videoKey(item) || index}
@@ -31,8 +38,8 @@ export default function ResultRow({
         }}
         onClick={(e) => e.stopPropagation()}
       />
-      <p className="truncate min-w-0 text-left relative z-[1] pointer-events-none" title={item.title}>
-        {item.title}
+      <p className="truncate min-w-0 text-left relative z-[1] pointer-events-none" title={titleText}>
+        {titleText}
       </p>
       <p className="truncate min-w-0 text-left relative z-[1] pointer-events-none" title={item.uploader}>
         {item.uploader}
