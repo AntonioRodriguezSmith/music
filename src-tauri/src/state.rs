@@ -18,6 +18,9 @@ pub struct AppState {
     /// Active yt-dlp search process (killed when a newer search starts).
     pub active_search: Arc<std::sync::Mutex<Option<CommandChild>>>,
     pub active_search_id: Arc<AtomicU64>,
+    /// Player library root (keep dir), resolved once in `setup` via
+    /// `app.path()` so Android never falls back to a relative path.
+    pub player_root: std::path::PathBuf,
 }
 
 pub fn app_state(app: &tauri::AppHandle) -> AppState {

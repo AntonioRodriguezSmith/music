@@ -289,6 +289,9 @@ fn app_cookies_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String>
 
 /// Legacy per-user folder (`%USERPROFILE%\cookies_youtube`) kept as a fallback
 /// while it still holds candidates, so existing setups keep working.
+/// Desktop-only: Android has no `USERPROFILE`/`HOME` guarantee and mobile
+/// cookies live exclusively in the app-managed folder.
+#[cfg(not(target_os = "android"))]
 fn legacy_cookies_dir() -> Option<std::path::PathBuf> {
     let home = std::env::var("USERPROFILE")
         .or_else(|_| std::env::var("HOME"))
@@ -298,6 +301,7 @@ fn legacy_cookies_dir() -> Option<std::path::PathBuf> {
 }
 
 /// True when `dir` contains at least one `*.txt` file.
+#[cfg(not(target_os = "android"))]
 fn has_cookie_txt_files(dir: &std::path::Path) -> bool {
     std::fs::read_dir(dir)
         .map(|entries| {
@@ -329,15 +333,18 @@ fn resolve_cookies_dir(
     if let Some(d) = dir.map(str::trim).filter(|s| !s.is_empty()) {
         return Ok(std::path::PathBuf::from(d));
     }
-    if let Ok(d) = std::env::var("CLIP_HARBOUR_COOKIES_DIR") {
-        let d = d.trim();
-        if !d.is_empty() {
-            return Ok(std::path::PathBuf::from(d));
+    #[cfg(not(target_os = "android"))]
+    {
+        if let Ok(d) = std::env::var("CLIP_HARBOUR_COOKIES_DIR") {
+            let d = d.trim();
+            if !d.is_empty() {
+                return Ok(std::path::PathBuf::from(d));
+            }
         }
-    }
-    if let Some(legacy) = legacy_cookies_dir() {
-        if has_cookie_txt_files(&legacy) {
-            return Ok(legacy);
+        if let Some(legacy) = legacy_cookies_dir() {
+            if has_cookie_txt_files(&legacy) {
+                return Ok(legacy);
+            }
         }
     }
     app_cookies_dir(app)
@@ -763,27 +770,41 @@ o espera unos minutos.",
 // 5. Download args
 // ---------------------------------------------------------------------------
 
-/// Default download folder: `%USERPROFILE%\Music\ClipHarbour` (created on demand).
-pub fn default_download_dir() -> Option<String> {
-    let home = std::env::var("USERPROFILE")
-        .or_else(|_| std::env::var("HOME"))
-        .ok()?;
-    Some(
-        std::path::PathBuf::from(home)
-            .join("Music")
-            .join("ClipHarbour")
-            .to_string_lossy()
-            .into_owned(),
-    )
+/// Default download folder.
+///
+/// Desktop: `%USERPROFILE%\Music\ClipHarbour` (created on demand).
+/// Android: `document_dir()/Music` — the app-managed library, since there is
+/// no `USERPROFILE`/`HOME` guarantee on mobile.
+pub fn default_download_dir(app: &tauri::AppHandle) -> Option<String> {
+    #[cfg(target_os = "android")]
+    {
+        let dir = app.path().document_dir().ok()?.join("Music");
+        return Some(dir.to_string_lossy().into_owned());
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        let _ = app;
+        let home = std::env::var("USERPROFILE")
+            .or_else(|_| std::env::var("HOME"))
+            .ok()?;
+        Some(
+            std::path::PathBuf::from(home)
+                .join("Music")
+                .join("ClipHarbour")
+                .to_string_lossy()
+                .into_owned(),
+        )
+    }
 }
 
 /// Ensure a usable download folder. Tries the requested `dir` first (creating
-/// it), then falls back to `%USERPROFILE%\Music\ClipHarbour`. This prevents
-/// yt-dlp from failing with an obscure `WinError 5` when the persisted path
-/// belongs to another user (e.g. a `C:\Users\rodri\…` copied from another PC).
-pub fn sanitize_download_dir(dir: Option<&str>) -> Result<String, String> {
+/// it), then falls back to the platform default (`%USERPROFILE%\Music\ClipHarbour`
+/// on desktop, `document_dir()/Music` on Android). This prevents yt-dlp from
+/// failing with an obscure `WinError 5` when the persisted path belongs to
+/// another user (e.g. a `C:\Users\rodri\…` copied from another PC).
+pub fn sanitize_download_dir(app: &tauri::AppHandle, dir: Option<&str>) -> Result<String, String> {
     let requested = dir.map(str::trim).filter(|s| !s.is_empty()).map(str::to_string);
-    for candidate in requested.into_iter().chain(default_download_dir()) {
+    for candidate in requested.into_iter().chain(default_download_dir(app)) {
         match std::fs::create_dir_all(&candidate) {
             Ok(()) => return Ok(candidate),
             Err(e) => eprintln!("warning: cannot use download dir {candidate}: {e}"),
@@ -796,11 +817,11 @@ pub fn sanitize_download_dir(dir: Option<&str>) -> Result<String, String> {
 }
 
 /// Validate + create the destination folder at startup so the sidebar always
-/// shows a working path (falls back to `%USERPROFILE%\Music\ClipHarbour` when
-/// the stored path is stale or belongs to another user).
+/// shows a working path (falls back to the platform default when the stored
+/// path is stale or belongs to another user).
 #[tauri::command(rename_all = "snake_case")]
-pub fn resolve_download_dir(dir: Option<String>) -> Result<String, String> {
-    sanitize_download_dir(dir.as_deref())
+pub fn resolve_download_dir(app: tauri::AppHandle, dir: Option<String>) -> Result<String, String> {
+    sanitize_download_dir(&app, dir.as_deref())
 }
 
 pub fn parse_config(config: DownloadConfig) -> Result<Vec<String>, String> {

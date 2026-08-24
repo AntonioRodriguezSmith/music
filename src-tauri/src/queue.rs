@@ -391,7 +391,7 @@ async fn run_download(app: tauri::AppHandle, process_id: usize, mut config: Down
     // path from another user (e.g. `C:\Users\rodri\…`) would fail with an
     // opaque WinError 5. Fall back to `%USERPROFILE%\Music\ClipHarbour`.
     if let Some(dir) = config.output_dir.as_deref() {
-        match sanitize_download_dir(Some(dir)) {
+        match sanitize_download_dir(&app, Some(dir)) {
             Ok(real) => config.output_dir = Some(real),
             Err(e) => {
                 set_download_status(&app, process_id, &config.title, e).await;
@@ -399,7 +399,7 @@ async fn run_download(app: tauri::AppHandle, process_id: usize, mut config: Down
                 return;
             }
         }
-    } else if let Ok(real) = sanitize_download_dir(None) {
+    } else if let Ok(real) = sanitize_download_dir(&app, None) {
         config.output_dir = Some(real);
     }
 

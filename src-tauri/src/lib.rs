@@ -1,7 +1,7 @@
 mod binaries;
 mod models;
 mod errors;
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, mobile))]
 mod player_cache;
 mod queue;
 mod state;
@@ -17,7 +17,7 @@ use tauri::{PhysicalPosition, PhysicalSize, Position, Size};
 use tauri_plugin_shell::process::CommandChild;
 
 use models::Download;
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, mobile))]
 use player_cache::{
     append_playlist_archive, clear_player_cache, clear_playlist_media, delete_player_cache_file,
     delete_playlist_dir, delete_playlist_file, list_playlist_video_ids, player_cache_dir,
@@ -84,12 +84,23 @@ pub fn run() {
             if let Err(e) = binaries::ensure() {
                 eprintln!("binaries::ensure: {e}");
             }
+            let player_root = {
+                #[cfg(any(debug_assertions, mobile))]
+                {
+                    player_cache::resolve_player_root(app.handle())
+                }
+                #[cfg(not(any(debug_assertions, mobile)))]
+                {
+                    std::path::PathBuf::new()
+                }
+            };
             app.manage(AppState {
                 process_registry: Arc::new(std::sync::Mutex::new(HashMap::<usize, CommandChild>::new())),
                 download_registry: Arc::new(Mutex::new(HashMap::<usize, Download>::new())),
                 pending_downloads: Arc::new(Mutex::new(VecDeque::new())),
                 active_search: Arc::new(std::sync::Mutex::new(None)),
                 active_search_id: Arc::new(AtomicU64::new(0)),
+                player_root,
             });
             #[cfg(desktop)]
             size_main_window_to_monitor(app);
@@ -118,38 +129,39 @@ pub fn run() {
             resolve_download_dir,
             #[cfg(debug_assertions)]
             devtools_log,
-            // Debug-only helpers (imports behind #[cfg(debug_assertions)] above).
-            #[cfg(debug_assertions)]
+            // Player cache/playlists (imports behind the gate above): desktop
+            // debug builds AND the mobile music app. Not in desktop release.
+            #[cfg(any(debug_assertions, mobile))]
             player_cache_dir,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             player_keep_dir,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             playlist_dir,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             resolve_playlist_file,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             list_playlist_video_ids,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             clear_playlist_media,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             append_playlist_archive,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             promote_to_playlist,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             delete_playlist_file,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             delete_playlist_dir,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             rename_playlist_dir,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             purge_player_cache,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             clear_player_cache,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             prune_player_cache,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             delete_player_cache_file,
-            #[cfg(debug_assertions)]
+            #[cfg(any(debug_assertions, mobile))]
             resolve_player_cache_file,
         ]);
 
@@ -157,13 +169,13 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    #[cfg(debug_assertions)]
-    app.run(|_app, event| {
+    #[cfg(any(debug_assertions, mobile))]
+    app.run(|app, event| {
         if let tauri::RunEvent::Exit = event {
-            let _ = clear_player_cache();
+            let _ = clear_player_cache(app.clone());
         }
     });
 
-    #[cfg(not(debug_assertions))]
+    #[cfg(not(any(debug_assertions, mobile)))]
     app.run(|_app, _event| {});
 }
