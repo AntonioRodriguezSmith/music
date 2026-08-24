@@ -21,11 +21,11 @@
     "regen:icons": "powershell -ExecutionPolicy Bypass -File ./scripts/regen-tauri-icons.ps1",
     "updater:latest": "powershell -ExecutionPolicy Bypass -File ./scripts/write-updater-latest.ps1",
     "filter:cookies": "powershell -ExecutionPolicy Bypass -File ./scripts/filter-youtube-cookies.ps1",
+    "test:download": "powershell -ExecutionPolicy Bypass -File ./scripts/test-download.ps1",
     "check:rust": "powershell -ExecutionPolicy Bypass -File ./scripts/cargo-check-windows.ps1",
     "check:rust:bg": "powershell -ExecutionPolicy Bypass -File ./scripts/cargo-check-bg.ps1"
   },
   "dependencies": {
-    "@app-core-ars/core": "^0.0.3",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.5",
