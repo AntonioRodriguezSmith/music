@@ -167,13 +167,15 @@ export default function CookiesSettings() {
             refreshing={refreshing}
             showRefresh={!isMobile()}
           />
-          <button
-            type="button"
-            className="text-[10px] text-gray-600 leading-snug underline hover:text-black"
-            onClick={openCookiesFolder}
-          >
-            {t("sidebar.openFolder")}
-          </button>
+          {!isMobile() ? (
+            <button
+              type="button"
+              className="text-[10px] text-gray-600 leading-snug underline hover:text-black"
+              onClick={openCookiesFolder}
+            >
+              {t("sidebar.openFolder")}
+            </button>
+          ) : null}
           <YtdlpVersionBadge version={ytdlpVersion} />
         </>
       ) : null}

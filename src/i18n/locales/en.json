@@ -7,6 +7,15 @@
     "modeDownload": "Music",
     "modePlayer": "Player"
   },
+  "mobile": {
+    "search": "Search",
+    "queue": "Queue",
+    "playlists": "Playlists",
+    "settings": "Settings",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "settingsHint": "On mobile, music is downloaded inside the app (document_dir). Playback runs in the foreground; background playback will be added later."
+  },
   "player": {
     "noTrack": "Pick a video to play",
     "prev": "Previous",

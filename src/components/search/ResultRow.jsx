@@ -1,4 +1,5 @@
 import { videoKey } from "../../lib/youtube_id";
+import { isMobile } from "../../lib/tauri_env";
 import { SEARCH_RESULT_GRID, SEARCH_ROW_HEIGHT_PX } from "../../lib/search_constants";
 
 export default function ResultRow({
@@ -10,10 +11,11 @@ export default function ResultRow({
   onToggleSelect,
   onOpen,
 }) {
+  const rowHeight = isMobile() ? Math.max(SEARCH_ROW_HEIGHT_PX, 52) : SEARCH_ROW_HEIGHT_PX;
   return (
     <div
       key={videoKey(item) || index}
-      style={{ height: SEARCH_ROW_HEIGHT_PX }}
+      style={{ height: rowHeight }}
       className={`${SEARCH_RESULT_GRID} relative border-b border-black text-sm shrink-0 box-border ${
         active ? "bg-black text-white" : "bg-white text-black hover:bg-black hover:text-white"
       }`}

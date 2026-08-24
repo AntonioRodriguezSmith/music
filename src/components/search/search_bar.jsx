@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useVideo } from "../../providers/video_context";
 import { resolveInput } from "../../lib/resolve_input";
-import { isTauri } from "../../lib/tauri_env";
+import { isMobile, isTauri } from "../../lib/tauri_env";
 import { cookieInvokeArgs } from "../../lib/cookies_prefs";
 import { SEARCH_FETCH_INITIAL, SEARCH_LOADING_SENTINEL } from "../../lib/search_constants";
 import { friendlyError } from "../../lib/app_errors";
@@ -205,7 +205,7 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
 
   return (
     <div
-      className="relative"
+      className="relative w-full"
       onFocus={() => setIsFocused(true)}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -218,7 +218,7 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
     >
       <form
         className={`flex items-stretch overflow-hidden rounded-xl border border-black bg-white focus-within:ring-1 focus-within:ring-black transition-[width,box-shadow] duration-200 max-w-full ${
-          isFocused ? "w-96" : "w-80"
+          isMobile() ? "w-full" : isFocused ? "w-96" : "w-80"
         }`}
         onSubmit={handleSubmit}
       >

@@ -7,6 +7,15 @@
     "modeDownload": "Music",
     "modePlayer": "Player"
   },
+  "mobile": {
+    "search": "Buscar",
+    "queue": "Cola",
+    "playlists": "Playlists",
+    "settings": "Ajustes",
+    "cancel": "Cancelar",
+    "ok": "OK",
+    "settingsHint": "En móvil la música se descarga dentro de la app (document_dir). La reproducción funciona en primer plano; el segundo plano se añadirá más adelante."
+  },
   "player": {
     "noTrack": "Elige un vídeo para reproducir",
     "prev": "Anterior",

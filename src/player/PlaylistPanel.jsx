@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { videoKey } from "../lib/youtube_id";
 import { formatNowPlayingDisplay } from "../lib/player_display";
+import { isMobile } from "../lib/tauri_env";
 import { SEARCH_LOADING_SENTINEL, SEARCH_PAGE_SIZE } from "../lib/search_constants";
 
 export default function PlaylistPanel({
+  fullWidth = false,
   searchResults,
   searchPage,
   setSearchPage,
@@ -31,6 +33,11 @@ export default function PlaylistPanel({
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  // Mobile-only in-app dialogs (window.confirm/prompt do not exist on Android WebView).
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+  const mobile = isMobile();
 
   const activeLabel =
     playlistsMeta.find((p) => p.id === activePlaylistId)?.name || activePlaylistId;
@@ -57,12 +64,21 @@ export default function PlaylistPanel({
   function onDeletePlaylist() {
     setMenuOpen(false);
     if (!activePlaylistId || activePlaylistId === "default") return;
+    if (mobile) {
+      setConfirmAction("delete");
+      return;
+    }
     if (!window.confirm(t("player.deletePlaylistConfirm", { name: activeLabel }))) return;
     void deletePlaylist(activePlaylistId);
   }
 
   function onRenamePlaylist() {
     setMenuOpen(false);
+    if (mobile) {
+      setRenameValue(activeLabel);
+      setRenameOpen(true);
+      return;
+    }
     const name = window.prompt(t("player.playlistName"), activeLabel);
     if (!name?.trim() || name.trim() === activeLabel) return;
     void renamePlaylist(activePlaylistId, name.trim());
@@ -70,6 +86,10 @@ export default function PlaylistPanel({
 
   function onClearPlaylist() {
     setMenuOpen(false);
+    if (mobile) {
+      setConfirmAction("clear");
+      return;
+    }
     if (!window.confirm(t("player.clearPlaylistConfirm", { name: activeLabel }))) return;
     void clearActivePlaylist(true);
   }
@@ -113,7 +133,11 @@ export default function PlaylistPanel({
     (status === "playing" || status === "caching" || status === "waiting");
 
   return (
-    <div className="w-80 border-l border-black flex flex-col min-h-0 shrink-0">
+    <div
+      className={`border-black flex flex-col min-h-0 shrink-0 ${
+        fullWidth ? "w-full border-l-0" : "w-80 border-l"
+      }`}
+    >
       <div className="px-3 py-2 border-b border-black flex flex-col gap-1.5">
         <div className="text-[10px] uppercase tracking-wide text-[#555]">
           {t("player.savedPlaylists")}
@@ -325,6 +349,85 @@ export default function PlaylistPanel({
           >
             {t("search.next")}
           </button>
+        </div>
+      ) : null}
+
+      {mobile && confirmAction ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-6"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-white border border-black p-4 w-full max-w-xs shadow-lg">
+            <p className="text-sm leading-snug mb-4">
+              {confirmAction === "delete"
+                ? t("player.deletePlaylistConfirm", { name: activeLabel })
+                : t("player.clearPlaylistConfirm", { name: activeLabel })}
+            </p>
+            <div className="flex justify-end gap-2 text-sm">
+              <button
+                type="button"
+                className="px-3 min-h-11 border border-black"
+                onClick={() => setConfirmAction(null)}
+              >
+                {t("mobile.cancel")}
+              </button>
+              <button
+                type="button"
+                className="px-3 min-h-11 bg-black text-white"
+                onClick={() => {
+                  const action = confirmAction;
+                  setConfirmAction(null);
+                  if (action === "delete") void deletePlaylist(activePlaylistId);
+                  else void clearActivePlaylist(true);
+                }}
+              >
+                {t("mobile.ok")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {mobile && renameOpen ? (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-6"
+          role="dialog"
+          aria-modal="true"
+        >
+          <form
+            className="bg-white border border-black p-4 w-full max-w-xs shadow-lg"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const name = renameValue.trim();
+              setRenameOpen(false);
+              if (!name || name === activeLabel) return;
+              void renamePlaylist(activePlaylistId, name);
+            }}
+          >
+            <label className="block text-sm mb-2" htmlFor="mobile-rename-playlist">
+              {t("player.playlistName")}
+            </label>
+            <input
+              id="mobile-rename-playlist"
+              autoFocus
+              className="w-full border border-black px-2 py-2 text-sm mb-4"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+            />
+            <div className="flex justify-end gap-2 text-sm">
+              <button
+                type="button"
+                className="px-3 min-h-11 border border-black"
+                onClick={() => setRenameOpen(false)}
+              >
+                {t("mobile.cancel")}
+              </button>
+              <button type="submit" className="px-3 min-h-11 bg-black text-white">
+                {t("mobile.ok")}
+              </button>
+            </div>
+          </form>
         </div>
       ) : null}
     </div>

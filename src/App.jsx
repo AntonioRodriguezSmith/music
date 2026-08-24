@@ -3,6 +3,7 @@ import "./App.css";
 import FileDesc from "./components/download/file_desc";
 import {
   BrowserRouter,
+  HashRouter,
   Routes,
   Route,
   useLocation,
@@ -10,6 +11,7 @@ import {
 } from "react-router-dom";
 import SideBar from "./components/menu/sidebar";
 import TitleBar from "./components/menu/titlebar";
+import MobileShell from "./components/mobile/MobileShell";
 import { useEffect, useRef, useState } from "react";
 import { VideoProvider } from "./providers/video_context";
 import { DownloadPathProvider } from "./providers/download_path_context";
@@ -27,7 +29,7 @@ import {
   saveAppMode,
 } from "./lib/app_mode";
 import { invoke } from "@tauri-apps/api/core";
-import { isTauri } from "./lib/tauri_env";
+import { isMobile, isTauri } from "./lib/tauri_env";
 import { PLAYER_ENABLED } from "./lib/feature_flags";
 
 function ModeBootstrap() {
@@ -116,17 +118,27 @@ function AppShell({ maximized, setMaximized }) {
 
 function App() {
   const [maximized, setMaximized] = useState(false);
+  const mobile = isMobile();
+  // HashRouter only on mobile: the Android webview origin is tauri://localhost,
+  // where the History API can misbehave. Desktop keeps BrowserRouter untouched.
+  const Router = mobile ? HashRouter : BrowserRouter;
 
   return (
     <VideoProvider>
       <DownloadPathProvider>
         <DownloadQueueProvider>
           <PlayerSessionProvider>
-            <BrowserRouter>
-              <ModeBootstrap />
-              {PLAYER_ENABLED ? <PlayerSessionLifecycle /> : null}
-              <AppShell maximized={maximized} setMaximized={setMaximized} />
-            </BrowserRouter>
+            <Router>
+              {mobile ? (
+                <MobileShell />
+              ) : (
+                <>
+                  <ModeBootstrap />
+                  {PLAYER_ENABLED ? <PlayerSessionLifecycle /> : null}
+                  <AppShell maximized={maximized} setMaximized={setMaximized} />
+                </>
+              )}
+            </Router>
           </PlayerSessionProvider>
         </DownloadQueueProvider>
       </DownloadPathProvider>
