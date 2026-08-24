@@ -111,7 +111,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 
 # Pedir ruta
 do {
-    $ruta = Read-Host -Prompt "`nEscribe la ruta de la carpeta (ej: C:\Users\rodri\Music\MEmu Music)"
+    $ruta = Read-Host -Prompt "`nEscribe la ruta de la carpeta (ej: $env:USERPROFILE\Music\MEmu Music)"
     $ruta = $ruta.Trim('"').Trim("'")
     if (-not (Test-Path $ruta)) {
         Write-Host "ERROR: La ruta '$ruta' no existe. Intenta de nuevo." -ForegroundColor Red

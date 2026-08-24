@@ -1,7 +1,7 @@
 # Clip Harbour - Windows development launcher (Tauri 2)
 # Opens a native desktop window — do NOT use the browser on :1420 for invoke/IPC.
 #
-# Prerequisites: Node.js, Rust (rustup), MSVC + Windows SDK, WebView2
+# Prerequisites: Node.js, Rust (rustup), MSVC toolchain via msvcup (no Visual Studio needed), WebView2
 # Sidecars: run .\scripts\fetch-windows-sidecars.ps1 once
 
 $ErrorActionPreference = "Stop"

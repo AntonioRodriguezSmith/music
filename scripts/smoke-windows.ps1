@@ -54,6 +54,29 @@ if ($nodeOk) {
     Fail "node not on PATH"
 }
 
+# Rust unit tests (queue.rs, ytdlp.rs). Carga el entorno MSVC del repo.
+$cargo = Join-Path $env:USERPROFILE ".cargo\bin\cargo.exe"
+if (Test-Path $cargo) {
+    $setup = Join-Path $root "scripts\setup-windows-env.ps1"
+    if (Test-Path $setup) { . $setup }
+    Push-Location (Join-Path $root "src-tauri")
+    # cargo escribe a stderr incluso en éxito (p. ej. "Finished test profile");
+    # con ErrorActionPreference=Stop ese 2>&1 lanza NativeCommandError y mata el smoke.
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    & $cargo test --lib 2>&1 | Out-Host
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    Pop-Location
+    if ($code -eq 0) { Ok "cargo test --lib passed" } else { Fail "cargo test --lib failed" }
+} else {
+    Fail "cargo not found at $cargo"
+}
+
+# Descarga real opcional (requiere red). Comentado por defecto para no depender
+# de red en el smoke básico. Actívalo descomentando:
+# npm run test:download
+
 # Manual IPC reminder
 Write-Host ""
 Write-Host "Manual desktop smoke (not automated):"

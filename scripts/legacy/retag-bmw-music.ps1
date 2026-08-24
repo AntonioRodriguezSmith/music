@@ -4,7 +4,7 @@
   Rename MEmu Music files to title-only and write clean title/artist/album tags (BMW USB).
 #>
 $ErrorActionPreference = 'Stop'
-$dir = if ($args[0]) { $args[0] } else { 'C:\Users\rodri\Music\MEmu Music' }
+$dir = if ($args[0]) { $args[0] } else { Join-Path $env:USERPROFILE 'Music\MEmu Music' }
 $ff = Join-Path $env:LOCALAPPDATA 'clip_harbour-target\release\ffmpeg.exe'
 if (-not (Test-Path -LiteralPath $ff)) {
   $ff = Join-Path $PSScriptRoot '..\src-tauri\binaries\ffmpeg-x86_64-pc-windows-msvc.exe'

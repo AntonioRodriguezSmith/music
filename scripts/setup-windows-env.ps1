@@ -41,9 +41,15 @@ if (-not $env:CARGO_TARGET_DIR -or $env:CARGO_TARGET_DIR -match 'cursor-sandbox'
     $env:CARGO_TARGET_DIR = Join-Path $env:LOCALAPPDATA "clip_harbour-target"
 }
 
-# Prefer real Visual Studio / Build Tools MSVC; msvcup is last-resort fallback only.
-# Build Tools usually lives under Program Files (x86).
+# Prefer msvcup (portable MSVC toolchain, no Visual Studio install required);
+# fall back to Visual Studio / Build Tools MSVC if present.
+# Note: SDK 10.0.26100 splits headers into OneCoreUAP packages msvcup does not
+# install, so msvcup installs default to SDK 10.0.22621.7 (full headers).
+$msvcupVcvars = Join-Path $env:LOCALAPPDATA "msvcup\toolchain22621\vcvars-x64.bat"
+$msvcupVcvarsLegacy = Join-Path $env:LOCALAPPDATA "msvcup\toolchain\vcvars-x64.bat"
 $vcvarsCandidates = @(
+    $msvcupVcvars,
+    $msvcupVcvarsLegacy,
     "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat",
@@ -51,8 +57,7 @@ $vcvarsCandidates = @(
     "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\vcvars64.bat",
     "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat",
-    "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat",
-    (Join-Path $env:LOCALAPPDATA "msvcup\toolchain\vcvars-x64.bat")
+    "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars64.bat"
 )
 
 # Prefer vswhere (GitHub Actions / VS Installer). Use -all so a newer VS without
@@ -73,7 +78,7 @@ if (Test-Path $vswhere) {
 
 $vcvars = $vcvarsCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 if (-not $vcvars) {
-    Write-Error "MSVC not found. Install 'Desktop development with C++' (VS) or Build Tools, then re-run."
+    Write-Error "MSVC not found. Install the portable MSVC toolchain with msvcup (https://github.com/marler8997/msvcup), e.g.: msvcup install $env:LOCALAPPDATA\msvcup\toolchain22621 autoenv msvc-14.44.17.14 sdk-10.0.22621.7 -- then re-run."
 }
 
 cmd /c "`"$vcvars`" && set" | ForEach-Object {
