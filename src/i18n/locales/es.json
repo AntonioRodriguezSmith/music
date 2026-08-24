@@ -21,6 +21,38 @@
     "storageUnavailable": "No se pudieron resolver las carpetas de la app.",
     "settingsHint": "En móvil la música se descarga dentro de la app (document_dir). La reproducción funciona en primer plano; el segundo plano se añadirá más adelante."
   },
+  "settings": {
+    "title": "Ajustes",
+    "folders": "Carpetas",
+    "youtube": "YouTube",
+    "music": "Música",
+    "app": "App"
+  },
+  "musica": {
+    "folderLabel": "Carpeta de música",
+    "folderPlaceholder": "Ruta de la carpeta a normalizar",
+    "chooseFolder": "Elegir carpeta",
+    "selectFolder": "Seleccionar carpeta de música",
+    "stepLabel": "Paso",
+    "stepFull": "Pipeline completo (1-4)",
+    "step1": "1 · Normalizar",
+    "step2": "2 · Reparar tags",
+    "step3": "3 · Unificar",
+    "step4": "4 · Organizar",
+    "modeLabel": "Modo",
+    "modeDry": "Ensayar",
+    "modeApply": "Aplicar",
+    "optionDeleteDuplicates": "Borrar duplicados (en vez de moverlos)",
+    "optionRemoveJunk": "Eliminar restos de descargas (*.part, *.ytdl)",
+    "run": "Ejecutar",
+    "running": "Ejecutando…",
+    "cancel": "Cancelar",
+    "outputTitle": "Salida",
+    "empty": "La salida aparecerá aquí.",
+    "exitCode": "Proceso terminado (código {{code}})",
+    "unavailable": "No disponible",
+    "unavailableHint": "La normalización no está disponible (PowerShell o scripts no encontrados). Ruta: {{dir}}"
+  },
   "player": {
     "noTrack": "Elige un vídeo para reproducir",
     "prev": "Anterior",

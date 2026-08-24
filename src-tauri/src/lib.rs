@@ -4,6 +4,8 @@ mod models;
 mod errors;
 #[cfg(any(debug_assertions, mobile))]
 mod player_cache;
+#[cfg(not(target_os = "android"))]
+mod musica;
 mod queue;
 mod state;
 mod ytdlp;
@@ -28,6 +30,8 @@ use player_cache::{
 use queue::{
     clear_finished_downloads, pause_download, resume_download, start_download, stop_download,
 };
+#[cfg(not(target_os = "android"))]
+use musica::{musica_available, musica_cancel, musica_run};
 use state::AppState;
 use ytdlp::{
     cancel_search, cookies_dir, cookies_file_valid, get_top_search, get_url_details,
@@ -102,6 +106,8 @@ pub fn run() {
                 active_search: Arc::new(std::sync::Mutex::new(None)),
                 active_search_id: Arc::new(AtomicU64::new(0)),
                 player_root,
+                #[cfg(not(target_os = "android"))]
+                active_musica: Arc::new(std::sync::Mutex::new(None)),
             });
             #[cfg(desktop)]
             size_main_window_to_monitor(app);
@@ -135,6 +141,13 @@ pub fn run() {
             files::mobile_default_dirs,
             #[cfg(debug_assertions)]
             devtools_log,
+            // Music normalization pipeline (PowerShell, desktop only).
+            #[cfg(not(target_os = "android"))]
+            musica_available,
+            #[cfg(not(target_os = "android"))]
+            musica_run,
+            #[cfg(not(target_os = "android"))]
+            musica_cancel,
             // Player cache/playlists (imports behind the gate above): desktop
             // debug builds AND the mobile music app. Not in desktop release.
             #[cfg(any(debug_assertions, mobile))]

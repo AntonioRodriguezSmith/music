@@ -21,6 +21,10 @@ pub struct AppState {
     /// Player library root (keep dir), resolved once in `setup` via
     /// `app.path()` so Android never falls back to a relative path.
     pub player_root: std::path::PathBuf,
+    /// PID of the in-flight music normalization process (desktop only; the
+    /// PowerShell pipeline does not exist on Android).
+    #[cfg(not(target_os = "android"))]
+    pub active_musica: Arc<std::sync::Mutex<Option<u32>>>,
 }
 
 pub fn app_state(app: &tauri::AppHandle) -> AppState {

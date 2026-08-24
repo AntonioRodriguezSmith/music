@@ -42,7 +42,7 @@ tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
-tokio = { version = "1", features = ["rt", "macros", "time", "sync"] }
+tokio = { version = "1", features = ["rt", "macros", "time", "sync", "process"] }
 
 # Signals (SIGTSTP/SIGCONT) power pause/resume only on desktop Unix; Android
 # reports unix but has no signal delivery for our children, so it is excluded.

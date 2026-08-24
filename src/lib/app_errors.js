@@ -44,8 +44,8 @@ export function parseAppError(e) {
 
 /**
  * Fallback per-code messages, shown when the i18n key is missing (e.g. the
- * current locale file is out of date). Must stay in sync with `errors.*` in
- * `src/i18n/locales/*.json`.
+ * locale file is out of date). Must stay in sync with `errors.*` in
+ * `src/i18n/locales/es.json`.
  */
 export const ERROR_FALLBACKS = {
   COOKIES_INVALID:

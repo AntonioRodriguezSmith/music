@@ -44,7 +44,13 @@ cache offline, playlists y descarga de audio. El escritorio (vista Descarga) no 
 | Offline | `playlists/` por slug + `promote_to_playlist` | Cada playlist es una carpeta con `id.mp4` + `.archive.txt`. |
 | Audio descargado | `document_dir/Music` (`resolve_download_dir`) | M4A + metadatos; sin MediaStore (no aparece en otras apps de música). |
 | Cookies | `app_data_dir()/cookies` | Solo importar `cookies.txt` (no hay `--cookies-from-browser` en móvil). |
+| Ajustes móviles | `src/components/mobile/MobileSettings.jsx` | Pestaña del bottom nav: importar cookies + rutas gestionadas (`mobile_default_dirs`). No usa la página `/settings` de desktop ni el normalizador de música (desktop-only). |
 | Binarios | `jniLibs/libffmpeg.so` + Chaquopy (yt-dlp) | `externalBin` no existe en Android; `ffmpeg` se ejecuta desde `nativeLibraryDir`. **Chaquopy aún no está cableado** en el proyecto Gradle (pendiente, ver `MOBILE_SPIKE.md`). |
+
+> **Idioma:** la UI es **solo español** (mismo `es.json` que desktop); se eliminó el soporte EN
+> en todo el código. El **formato solo audio en modo Music** (filtro `isAudioOnlyFormat` en la
+> lista de formatos de `file_desc.jsx`) es de la vista `/val` de desktop; en móvil la descarga
+> de audio ya usa `bestaudio` directo.
 
 ### Flujo de datos (reproducción offline)
 

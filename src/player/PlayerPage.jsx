@@ -36,7 +36,7 @@ export default function PlayerPage() {
     downloadAudio,
     downloadVideo,
   } = usePlayerSession();
-  const [isFocused, setIsFocused] = useState(false);
+  const [, setIsFocused] = useState(false);
   const [dlBusy, setDlBusy] = useState(false);
   const [dlMsg, setDlMsg] = useState("");
 
@@ -106,7 +106,7 @@ export default function PlayerPage() {
         </div>
       ) : null}
       <div className="shrink-0 flex justify-center py-3 px-4">
-        <SearchBar setIsFocused={setIsFocused} isFocused={isFocused} playerMode />
+        <SearchBar setIsFocused={setIsFocused} playerMode />
       </div>
       <div className="h-px bg-black w-full shrink-0" />
       <div className="flex-1 flex min-h-0 overflow-hidden">

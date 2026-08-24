@@ -1,17 +1,16 @@
 /**
- * Format yt-dlp upload_date (`YYYYMMDD`) for display.
+ * Format yt-dlp upload_date (`YYYYMMDD`) for display. App is Spanish-only.
  * @param {string | null | undefined} raw
- * @param {string} [locale]
  * @returns {string | null}
  */
-export function formatUploadDate(raw, locale = "es") {
+export function formatUploadDate(raw) {
   if (!raw || typeof raw !== "string") return null;
   const m = raw.trim().match(/^(\d{4})(\d{2})(\d{2})$/);
   if (!m) return raw.trim() || null;
   const date = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
   if (Number.isNaN(date.getTime())) return raw;
   try {
-    return new Intl.DateTimeFormat(locale, {
+    return new Intl.DateTimeFormat("es", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -24,13 +23,12 @@ export function formatUploadDate(raw, locale = "es") {
 
 /**
  * @param {number | null | undefined} n
- * @param {string} [locale]
  * @returns {string | null}
  */
-export function formatCount(n, locale = "es") {
+export function formatCount(n) {
   if (n == null || !Number.isFinite(Number(n))) return null;
   try {
-    return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(
+    return new Intl.NumberFormat("es", { notation: "compact", maximumFractionDigits: 1 }).format(
       Number(n),
     );
   } catch {

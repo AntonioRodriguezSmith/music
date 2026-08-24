@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { isTauri } from "../../lib/tauri_env";
 import { PLAYER_ENABLED } from "../../lib/feature_flags";
+import SettingsIcon from "../svg/settings";
 import {
   APP_MODES,
   modeFromPath,
@@ -57,6 +58,18 @@ export default function TitleBar({ onMaximizedChange }) {
     navigate(pathForMode(next));
   }
 
+  const settingsButton = (
+    <button
+      type="button"
+      className="size-7 p-1 border border-black rounded hover:bg-black hover:text-white mr-1"
+      onClick={() => navigate("/settings")}
+      title={t("settings.title")}
+      aria-label={t("settings.title")}
+    >
+      <SettingsIcon />
+    </button>
+  );
+
   const modeToggle = (
     <div className="relative z-10 flex items-center gap-1 text-[11px] mr-2">
       <button
@@ -85,7 +98,10 @@ export default function TitleBar({ onMaximizedChange }) {
   if (!isTauri()) {
     return (
       <div className="titlebar shrink-0 flex items-center justify-between px-3 select-none">
-        {modeToggle}
+        <div className="flex items-center">
+          {settingsButton}
+          {modeToggle}
+        </div>
         <span className="text-[13px] font-medium tracking-wide text-[#1d1d1f] select-none absolute left-1/2 -translate-x-1/2">
           {t("app.name")}
         </span>
@@ -115,7 +131,8 @@ export default function TitleBar({ onMaximizedChange }) {
         </span>
       </div>
 
-      <div className="relative z-10 flex items-center w-[140px] shrink-0">
+      <div className="relative z-10 flex items-center gap-1 shrink-0">
+        {settingsButton}
         {modeToggle}
       </div>
       <div className="flex-1 min-w-0" />

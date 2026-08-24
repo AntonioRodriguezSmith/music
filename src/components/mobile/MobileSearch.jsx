@@ -60,7 +60,7 @@ export default function MobileSearch() {
   return (
     <div className="flex flex-1 flex-col min-h-0 overflow-hidden">
       <div className="shrink-0 px-3 pt-3 pb-2 flex justify-center">
-        <SearchBar setIsFocused={setIsFocused} isFocused={isFocused} playerMode />
+        <SearchBar setIsFocused={setIsFocused} playerMode />
       </div>
 
       {nowPlaying ? (

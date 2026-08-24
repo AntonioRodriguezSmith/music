@@ -25,7 +25,12 @@ export default function Options({ curr, setCurr, selectedVideo, onUserPickFormat
       return { orderedFormats: [], hasSecondary: false, totalPages: 1 };
     }
 
-    const indexed = formats.map((fmt, originalIndex) => ({ fmt, originalIndex }));
+    // Clip Harbour descarga música: solo se ofrecen formatos de audio.
+    // `originalIndex` sigue apuntando a selectedVideo.formats para que la
+    // selección (curr) continúe referenciando el formato real.
+    const indexed = formats
+      .map((fmt, originalIndex) => ({ fmt, originalIndex }))
+      .filter(({ fmt }) => isAudioOnlyFormat(fmt));
     const visible = showAll ? indexed : indexed.filter(({ fmt }) => isPrimaryFormat(fmt));
     const secondary = indexed.some(({ fmt }) => !isPrimaryFormat(fmt));
 
@@ -90,7 +95,10 @@ export default function Options({ curr, setCurr, selectedVideo, onUserPickFormat
         <span className="text-right">{t("formats.colSize")}</span>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto">
-        {pageFormats.map(({ fmt, originalIndex }) => {
+        {orderedFormats.length === 0 ? (
+          <p className="px-3 py-4 text-xs text-[#555]">{t("download.noFormats")}</p>
+        ) : (
+          pageFormats.map(({ fmt, originalIndex }) => {
           const label = buildFormatLabel(fmt, t);
           const quality = buildFormatQuality(fmt);
           const secondary = !isPrimaryFormat(fmt);
@@ -115,7 +123,8 @@ export default function Options({ curr, setCurr, selectedVideo, onUserPickFormat
               <span className="truncate text-right text-xs">{fmt.filesize || "—"}</span>
             </button>
           );
-        })}
+        })
+        )}
       </div>
       <div className="flex shrink-0 flex-col gap-1 border-t border-black bg-[#f4f4f4] px-2 py-1.5 text-xs">
         {hasSecondary ? (

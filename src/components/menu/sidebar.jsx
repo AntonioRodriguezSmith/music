@@ -1,12 +1,10 @@
-import FolderPicker from "../download/save_destination";
-import PlayerFolderPanel from "./player_folder_panel";
-import CookiesSettings from "../download/cookies_settings";
 import { useState, useEffect, useMemo, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import Queue from "../svg/queue";
 import Folder from "../svg/folder";
+import Settings from "../svg/settings";
 import { isActive, isFinished } from "../../lib/download_status";
 import { QUEUE_PAGE_SIZE, HISTORY_PAGE_SIZE } from "../../lib/search_constants";
 import { useDownloadQueue } from "../../providers/download_queue_context";
@@ -19,8 +17,7 @@ import {
   removeDownloadHistoryItem,
 } from "../../lib/download_history";
 import { openExternalPath } from "../../lib/open_path";
-import { isMobile, isTauri } from "../../lib/tauri_env";
-import UpdateChecker from "./update_checker";
+import { isTauri } from "../../lib/tauri_env";
 import SessionQueueList from "./sidebar/SessionQueueList";
 import QueueList from "./sidebar/QueueList";
 import HistoryList from "./sidebar/HistoryList";
@@ -333,21 +330,17 @@ export default function SideBar({ open, setOpen, compact = false }) {
             }`}
           >
             {open ? (
-              <>
-                {compact ? (
-                  <>
-                    <PlayerFolderPanel />
-                    <FolderPicker
-                      titleKey="sidebar.setAudioFolder"
-                      dialogTitleKey="folder.audioDialogTitle"
-                    />
-                  </>
-                ) : (
-                  <FolderPicker />
-                )}
-                <CookiesSettings />
-                {!compact && !isMobile() ? <UpdateChecker /> : null}
-              </>
+              <button
+                type="button"
+                className="flex items-center gap-2 px-1 py-1 text-sm font-medium leading-5 hover:underline"
+                onClick={() => navigate("/settings")}
+                title={t("settings.title")}
+              >
+                <span className="size-4 shrink-0">
+                  <Settings />
+                </span>
+                <span>{t("settings.title")}</span>
+              </button>
             ) : (
               <button
                 type="button"

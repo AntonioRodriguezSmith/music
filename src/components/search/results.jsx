@@ -17,13 +17,14 @@ import { cookieInvokeArgs } from "../../lib/cookies_prefs";
 import { friendlyError } from "../../lib/app_errors";
 import { extractYouTubeId } from "../../lib/youtube_id";
 import { formatCount, formatUploadDate } from "../../lib/preview_meta";
-import i18n from "../../i18n";
 import ResultRow from "./ResultRow";
 import PreviewPanel from "./PreviewPanel";
 
 export default function SearchResults({ open }) {
   const { t } = useTranslation();
-  const [curr, setCurr] = useState(0);
+  // Active (highlighted/previewed) row is tracked by video key so it survives
+  // page changes: going back to a page restores the same row as selected.
+  const [activeKey, setActiveKey] = useState(null);
   const [configuring, setConfiguring] = useState(false);
   const [pageSize, setPageSize] = useState(SEARCH_PAGE_SIZE);
   const listRef = useRef(null);
@@ -57,7 +58,8 @@ export default function SearchResults({ open }) {
     () => realResults.slice(page * pageSize, page * pageSize + pageSize),
     [realResults, page, pageSize],
   );
-  const firstPageItemKey = pageItems[0] ? videoKey(pageItems[0]) : null;
+  const activeIndex = pageItems.findIndex((item) => videoKey(item) === activeKey);
+  const curr = activeIndex >= 0 ? activeIndex : 0;
   const previewItem = pageItems[curr] ?? pageItems[0];
   const previewKey = previewItem ? videoKey(previewItem) : null;
 
@@ -112,19 +114,13 @@ export default function SearchResults({ open }) {
     }
   }, [searchPage, totalPages, setSearchPage]);
 
-  useEffect(() => {
-    setCurr(0);
-  }, [page, firstPageItemKey]);
-
-  useEffect(() => {
-    setCurr((prev) => Math.min(prev, Math.max(0, pageItems.length - 1)));
-  }, [pageItems.length]);
-
   if (!isTauri()) {
     return (
-      <div className="ml-4 max-w-xl text-base leading-relaxed text-[#333] p-4">
-        <p className="font-semibold mb-2">{t("search.browserHintTitle")}</p>
-        <p>{t("search.browserHintBody")}</p>
+      <div className="flex-1 flex items-start justify-center px-4 pt-4">
+        <div className="max-w-xl text-base leading-relaxed text-[#333] text-center">
+          <p className="font-semibold mb-2">{t("search.browserHintTitle")}</p>
+          <p>{t("search.browserHintBody")}</p>
+        </div>
       </div>
     );
   }
@@ -171,13 +167,12 @@ export default function SearchResults({ open }) {
   const allPageSelected =
     pageItems.length > 0 && pageItems.every((item) => isBulkSelected(item));
   const previewSelected = previewItem ? isBulkSelected(previewItem) : false;
-  const locale = i18n.language?.startsWith("en") ? "en" : "es";
   const previewMeta = previewItem
     ? {
         channel: previewItem.channel || previewItem.uploader,
-        views: formatCount(previewItem.view_count ?? previewItem.viewCount, locale),
-        likes: formatCount(previewItem.like_count ?? previewItem.likeCount, locale),
-        uploaded: formatUploadDate(previewItem.upload_date ?? previewItem.uploadDate, locale),
+        views: formatCount(previewItem.view_count ?? previewItem.viewCount),
+        likes: formatCount(previewItem.like_count ?? previewItem.likeCount),
+        uploaded: formatUploadDate(previewItem.upload_date ?? previewItem.uploadDate),
         videoId: extractYouTubeId(previewItem.url),
         isLive: /is_live|live_now/i.test(previewItem.live_status || previewItem.liveStatus || ""),
       }
@@ -263,7 +258,9 @@ export default function SearchResults({ open }) {
                   index={index}
                   active={index === curr}
                   selected={isBulkSelected(item)}
-                  onHover={setCurr}
+                  onHover={(index) =>
+                    setActiveKey(videoKey(pageItems[index]) ?? null)
+                  }
                   onToggleSelect={toggleBulkItem}
                   onOpen={openResult}
                 />

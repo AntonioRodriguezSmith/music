@@ -17,7 +17,7 @@ import { loadSearchHistory, pushSearchHistory } from "../../lib/search_history";
  * @param {{ setIsFocused: (v: boolean) => void, isFocused: boolean, playerMode?: boolean }} props
  * playerMode: never navigate to /val; URL → single result in place.
  */
-export default function SearchBar({ setIsFocused, isFocused, playerMode = false }) {
+export default function SearchBar({ setIsFocused, playerMode = false }) {
   const { t } = useTranslation();
   const [searchValue, setSearchValue] = useState("");
   const [error, setError] = useState(null);
@@ -217,8 +217,8 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
       }}
     >
       <form
-        className={`flex items-stretch overflow-hidden rounded-xl border border-black bg-white focus-within:ring-1 focus-within:ring-black transition-[width,box-shadow] duration-200 max-w-full ${
-          isMobile() ? "w-full" : isFocused ? "w-96" : "w-80"
+        className={`flex items-stretch overflow-hidden rounded-xl border border-black bg-white focus-within:ring-1 focus-within:ring-black transition-shadow duration-200 max-w-full ${
+          isMobile() ? "w-full" : "w-80"
         }`}
         onSubmit={handleSubmit}
       >
@@ -239,7 +239,7 @@ export default function SearchBar({ setIsFocused, isFocused, playerMode = false 
           autoComplete="off"
           name="q"
           enterKeyHint="search"
-          className="min-w-0 flex-1 text-black font-light text-sm bg-transparent border-0 outline-none focus:ring-0 px-4 h-11"
+          className="min-w-0 flex-1 text-black font-normal text-base bg-transparent border-0 outline-none focus:ring-0 px-4 h-11"
           placeholder={t("search.placeholder")}
         />
         <button

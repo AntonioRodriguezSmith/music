@@ -5,12 +5,18 @@ carpeta de música descargada. Sustituye a los antiguos scripts sueltos
 (`normalizar-musica.ps1`, `reparar-tags.ps1`, `unificar-interpretes.ps1`,
 `organizar-interpretes.ps1`) que quedaron en `scripts/legacy/`.
 
+Desde la app de escritorio también se puede lanzar el pipeline desde
+**Ajustes → Música** (panel `MusicaPanel`, solo desktop) — ver
+[Integración con la app](#integración-con-la-app-desktop).
+
 ## Estructura
 
 ```
 scripts/musica/
   _lib.ps1              Librería compartida (dot-source): carpetas, ffmpeg,
                         metadatos (ffmetadata UTF-8), mojibake y limpieza.
+  _runner.ps1           Lanzador estándar invocado desde Rust (musica.rs):
+                        fuerza salida UTF-8 y pasa los argumentos por `-File`.
   01-normalizar.ps1     Nombres de archivo + metadatos básicos + duplicados.
   02-reparar-tags.ps1   Reparación profunda de tags (mojibake, títulos).
   03-unificar.ps1       Unificación de intérpretes + nombres finales (sentence case).
@@ -91,6 +97,27 @@ Carpeta objetivo: se resuelve en este orden
   `otros`. Las carpetas de intérprete que quedan vacías se eliminan (nunca
   `otros` ni `.duplicados`).
 - `.duplicados/`, `__tag_*` y archivos `.temp.*` se excluyen siempre.
+
+## Integración con la app (desktop)
+
+El pipeline está disponible en la UI en **Ajustes → Música** (solo desktop;
+los comandos Rust se compilan con `#[cfg(not(target_os = "android"))]`).
+
+- **Backend** — `src-tauri/src/musica.rs` registra los comandos:
+  - `musica_available` → `{ available, scriptsDir, error }`: comprueba que
+    `_runner.ps1` y el orquestador existen.
+  - `musica_run { dir, step, apply, deleteDuplicates, removeJunk }`: lanza
+    PowerShell con `_runner.ps1` vía `tokio::process::Command`; emite cada línea
+    de stdout/stderr como evento `musica://line` y el código de salida como
+    `musica://exit` (`app.emit`). El PID se guarda en `state.active_musica`.
+  - `musica_cancel`: mata el árbol del proceso con `taskkill /PID <pid> /T /F`.
+- **Frontend** — `src/lib/musica.js` (wrappers de `invoke`) y
+  `src/components/settings/MusicaPanel.jsx` (selector de carpeta, paso
+  completo/1–4, ensayo vs aplicar, flags y salida en vivo). La carpeta por
+  defecto es la carpeta de descarga configurada.
+- **Lanzador** — `scripts/musica/_runner.ps1` fija
+  `[Console]::OutputEncoding = UTF8` y delega en el script pedido con `& $script`
+  para garantizar que los acentos/emojis salgan bien codificados al frontend.
 
 ## Logs
 

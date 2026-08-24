@@ -22,6 +22,8 @@ import {
 } from "./providers/player_session_context";
 import Home from "./home";
 import PlayerPage from "./player/PlayerPage";
+import SettingsPage from "./components/settings/SettingsPage";
+import CookieStartup from "./components/settings/CookieStartup";
 import {
   APP_MODES,
   loadAppMode,
@@ -83,6 +85,9 @@ function AppShell({ maximized, setMaximized }) {
   const isPlayer = modeFromPath(location.pathname) === APP_MODES.PLAYER;
 
   useEffect(() => {
+    // Settings is a shared page, not a mode: opening it from Player must not
+    // overwrite the persisted mode (otherwise a restart would land in Music).
+    if (location.pathname === "/settings") return;
     saveAppMode(modeFromPath(location.pathname));
   }, [location.pathname]);
 
@@ -107,6 +112,7 @@ function AppShell({ maximized, setMaximized }) {
               {PLAYER_ENABLED ? (
                 <Route path="/player" element={<PlayerPage />} />
               ) : null}
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="/val" element={<FileDesc />} />
             </Routes>
           </div>
@@ -134,6 +140,7 @@ function App() {
               ) : (
                 <>
                   <ModeBootstrap />
+                  <CookieStartup />
                   {PLAYER_ENABLED ? <PlayerSessionLifecycle /> : null}
                   <AppShell maximized={maximized} setMaximized={setMaximized} />
                 </>

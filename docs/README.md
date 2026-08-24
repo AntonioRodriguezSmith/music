@@ -25,7 +25,7 @@
 - [PLAYER_PLAYLISTS.md](./PLAYER_PLAYLISTS.md) — Player, listas offline, rate-limit YouTube (P10a–c/e; P10d parking)
 - [FLUJO_DESCARGA.md](./FLUJO_DESCARGA.md) — flujo end-to-end de la descarga (huecos y verificaciones pendientes)
 - [ERRORS.md](./ERRORS.md) — biblioteca de errores (`{ code, message, detail }` + deuda conocida)
-- [MUSICA_PIPELINE.md](./MUSICA_PIPELINE.md) — pipeline de gestión de música (`scripts/musica`)
+- [MUSICA_PIPELINE.md](./MUSICA_PIPELINE.md) — pipeline de gestión de música (`scripts/musica`) y su integración en Ajustes (desktop)
 - [TAURI_URLS.md](./TAURI_URLS.md) — índice de URLs Tauri 1 (histórico) + Tauri 2 (canónico)
 - [WINDOWS.md](./WINDOWS.md) — desarrollo y build release en Windows
 - [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md) — splash + acceso directo Escritorio

@@ -2,6 +2,40 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-08 — Ajustes centralizados + normalizador de música + i18n español-only
+
+- **Página de Ajustes** (`/settings`): agrupa paneles que vivían en la sidebar
+  (carpetas de descarga/player, cookies, actualizaciones) en secciones con
+  tarjeta; se abre desde el icono de engranaje de la titlebar o el botón
+  **Ajustes** de la sidebar. No es un modo: abrirla no pisa el modo persistido
+  ([App.jsx](../src/App.jsx), [SettingsPage.jsx](../src/components/settings/SettingsPage.jsx)).
+- **Normalizador de música** (solo desktop): panel `MusicaPanel` en Ajustes
+  que ejecuta el pipeline `scripts/musica` vía nuevos comandos Tauri
+  `musica_available` / `musica_run` / `musica_cancel`
+  ([musica.rs](../src-tauri/src/musica.rs), [lib/musica.js](../src/lib/musica.js),
+  [_runner.ps1](../scripts/musica/_runner.ps1)). Selección de carpeta, paso
+  (completo/1–4), modo ensayo/aplicar, flags `-DeleteDuplicates`/`-RemoveJunk`,
+  y salida en vivo vía eventos `musica://line` / `musica://exit`. Cancelación
+  con `taskkill` sobre el árbol de PowerShell. Ver [MUSICA_PIPELINE.md](./MUSICA_PIPELINE.md).
+- **Cookies al arranque:** los hooks de auto-refresh/auto-perfil se montan una
+  vez en desktop vía `CookieStartup.jsx` (fuera de la UI), en vez de vivir en
+  `cookies_settings.jsx`.
+- **i18n español-only:** se elimina `en.json` y toda la lógica de idioma; la UI
+  queda solo en español (`es` como único `lng`/`fallbackLng`). Se retiran
+  `setAppLanguage`, el control **ES | EN** de la sidebar y el parámetro `locale`
+  de `formatCount`/`formatUploadDate`.
+- **Formato solo audio en Music:** la lista **Formatos disponibles** de la
+  pantalla de descarga filtra con `isAudioOnlyFormat`, de modo que en modo Music
+  solo se ofrecen pistas de audio (se conserva el `originalIndex` real para que
+  la selección/descarga apunte al formato correcto; aviso `noFormats` si el
+  vídeo no tuviera audio).
+- **UI de búsqueda:** cabecera fija (barra y separador siempre visibles, aviso
+  "sin resultados" en una línea bajo la línea), ancho de barra fijo `w-80`, letra
+  `text-base` más legible, y la fila activa persiste al cambiar de página
+  (`activeKey` por vídeo en vez de índice).
+- **Docs:** [MUSICA_PIPELINE.md](./MUSICA_PIPELINE.md), [ERRORS.md](./ERRORS.md)
+  (referencias a `en.json` retiradas), README. `npm run test` (91) + `cargo check` OK.
+
 ## 2026-08 — Rutas multi-usuario robustas + cookies TXT siempre funcional
 
 - **Carpeta de descarga:** nuevo `sanitize_download_dir` en [ytdlp.rs](../src-tauri/src/ytdlp.rs): crea la carpeta pedida y, si no es usable (ruta de otro usuario, p. ej. `C:\Users\rodri\…`, o permiso denegado), cae a `%USERPROFILE%\Music\ClipHarbour`. `run_download` y el nuevo comando `resolve_download_dir` lo aplican al arrancar/descargar, evitando `WinError 5` de yt-dlp.

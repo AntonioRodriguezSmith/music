@@ -42,7 +42,7 @@ Al añadir o renombrar un código, actualiza en paralelo:
 
 1. `src-tauri/src/errors.rs` (`codes`).
 2. `src/lib/app_errors.js` (`ERROR_FALLBACKS`).
-3. `errors.*` en `src/i18n/locales/es.json` y `en.json`.
+3. `errors.*` en `src/i18n/locales/es.json`.
 
 ## Deuda conocida (baseline pre-limpieza)
 

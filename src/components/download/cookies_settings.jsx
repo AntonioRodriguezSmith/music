@@ -7,8 +7,6 @@ import { friendlyError } from "../../lib/app_errors";
 import { openExternalPath } from "../../lib/open_path";
 import { singleFlight } from "../../hooks/auto_cookies_flight";
 import { useVideo } from "../../providers/video_context";
-import { useAutoRefreshCookies } from "../../hooks/use_auto_refresh_cookies";
-import { useAutoProfileCookies } from "../../hooks/use_auto_profile_cookies";
 import { useYtdlpVersion } from "../../hooks/use_ytdlp_version";
 import { isMobile } from "../../lib/tauri_env";
 import CookieFileField from "./cookies/CookieFileField";
@@ -29,34 +27,6 @@ export default function CookiesSettings() {
     saveCookiePrefs({ cookiesFile: nextFile });
     clearPreviewCache?.();
   }
-
-  // Auto-refresh cookies from the browser (Firefox, then Chrome, then Edge) on
-  // startup. A valid manual file always wins so the refresh never silently
-  // overrides it; a stale path (e.g. pointing to a deleted cookies_raw_* temp)
-  // is replaced by the fresh merge.
-  useAutoRefreshCookies(
-    (path) => maybeApplyAutoRefresh(path),
-    () => setRefreshMsg(t("cookies.refreshFailed")),
-  );
-
-  async function maybeApplyAutoRefresh(path) {
-    const configured = loadCookiePrefs().cookiesFile;
-    if (configured) {
-      try {
-        const valid = await invoke("cookies_file_valid", { path: configured });
-        if (valid) return;
-        console.warn(`replacing stale cookies path: ${configured}`);
-      } catch {
-        return;
-      }
-    }
-    applyFile(path);
-    setRefreshMsg("");
-  }
-
-  // Auto-profile cookies on startup: only when nothing is configured yet, scan
-  // the default cookies_youtube folder and pick the first .txt.
-  useAutoProfileCookies(applyFile);
 
   const ytdlpVersion = useYtdlpVersion(openPanel);
 

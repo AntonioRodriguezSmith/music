@@ -47,9 +47,11 @@ Existen otros frontends como [ezytdl](https://github.com/sylviiu/ezytdl) o [yout
     * **Standard** (por defecto) — elige el mejor audio; puedes cambiar formato/salida a mano.
     * **USB BMW** — mejor audio y conversión a **M4A** (MP3 opcional); metadatos activados / miniatura desactivada por defecto; se borra el fichero fuente tras convertir bien.
     * **PC** — mejor audio y se conserva el contenedor original (suele ser Opus/WebM) sin re-encode.
-  * **Selector de formatos:** primero los streams útiles (audio/vídeo reales); columnas Formato / Tipo / Calidad / Tamaño; **Mostrar todos** incluye mhtml/storyboard; paginación si hay más de 12 formatos.
+  * **Selector de formatos:** primero los streams útiles (audio/vídeo reales); columnas Formato / Tipo / Calidad / Tamaño; **Mostrar todos** incluye mhtml/storyboard; paginación si hay más de 12 formatos. En el modo **Music** la lista muestra **solo formatos de audio** (`isAudioOnlyFormat`).
   * Panel **Datos clave** con campos legibles y traducidos (códec, bitrate, frecuencia, resolución, tamaño) en lugar de claves JSON crudas.
-  * Idioma de la UI **ES / EN** (español por defecto); preferencia guardada en local.
+  * Idioma de la UI: **solo español** (la preferencia `es` se guarda en local; se eliminó el soporte EN).
+  * **Página de Ajustes** (`/settings`): carpetas, cookies, actualizaciones y el **normalizador de música** en una vista centralizada (engranaje de la titlebar / botón Ajustes de la sidebar).
+  * **Normalizador de música** (desktop): ejecuta el pipeline `scripts/musica` desde la UI (ensayo/aplicar, pasos 1–4, duplicados/junk) con salida en vivo — [docs/MUSICA_PIPELINE.md](docs/MUSICA_PIPELINE.md).
   * Ventana sin decoración nativa, estilo iTunes: shell redondeado, titlebar con degradado, controles circulares a la derecha.
   * Sidebar de cola con pestañas **Cola | Historial**, paginación, limpiar terminados, **cancelar todas**, abrir carpeta / fichero; máximo **2** descargas en paralelo (`queued` para el resto).
   * **Buscar actualizaciones** (updater Tauri vía GitHub Releases).
@@ -68,17 +70,17 @@ Existen otros frontends como [ezytdl](https://github.com/sylviiu/ezytdl) o [yout
 Upstream (Linux y builds originales): [releases de clip_harbour](https://github.com/amansxcalibur/clip_harbour/releases). Las versiones con sufijo `_python` requieren Python.
 
 En la app de escritorio (ventana nativa con `npm run tauri -- dev` / `npm run dev:windows`). En Windows: acceso directo **Clip Harbour** del Escritorio con splash — [docs/LAUNCHER_WINDOWS.md](docs/LAUNCHER_WINDOWS.md).
-- Usa el control **ES | EN** en la sidebar para cambiar el idioma.
-- Busca o pega una URL de YouTube. Navega con Anterior / Siguiente (filas por página fijadas tras el primer layout). Pasa el ratón ~400 ms sobre una fila para ver miniatura y metadatos.
+- Usa la barra de búsqueda (fija, ancho constante) o pega una URL de YouTube. Navega con Anterior / Siguiente (filas por página fijadas tras el primer layout). Pasa el ratón ~400 ms sobre una fila para ver miniatura y metadatos; la fila activa se mantiene al cambiar de página.
 - Marca vídeos y pulsa **Configurar descarga**, o abre un resultado concreto.
 - En la pantalla de descarga, elige un **modo**:
   - **Standard** (por defecto): mejor audio; cambia formato/salida si quieres.
   - **USB BMW**: mejor audio y conversión a **M4A** (MP3 opcional). Tras convertir bien, se borra el fichero fuente temporal.
   - **PC**: mejor audio en Opus/WebM sin conversión — no pensado para USB del coche.
-- Expande **Formatos disponibles** / **Datos clave** según necesites.
+- Expande **Formatos disponibles** (solo audio en modo Music) / **Datos clave** según necesites.
 - **Nota bulk:** la descarga múltiple usa `bestaudio/best` por URL.
-- Elige carpeta de descarga y **cookies.txt** (Método A) en la sidebar — [docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md).
+- Elige carpeta de descarga y **cookies.txt** (Método A) en **Ajustes** (engranaje de la titlebar) — [docs/PHASE2_SETUP.md](docs/PHASE2_SETUP.md).
 - Sidebar **Cola | Historial**: cancelar todas, abrir carpeta/fichero, exportar historial. Tras reinicio con pendientes: **Reanudar** → Reintentar.
+- **Ajustes → Música**: normaliza la carpeta de música (ensayo por defecto) — [docs/MUSICA_PIPELINE.md](docs/MUSICA_PIPELINE.md).
 
 ## Configuración de desarrollo
 ### Requisitos
