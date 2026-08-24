@@ -21,6 +21,8 @@ dist-ssr
 .env
 .env.*
 !.env.example
+# .env.mobile solo contiene flags de build (VITE_ENABLE_PLAYER), no secretos
+!.env.mobile
 
 # Playwright / Vitest artifacts
 test-results/

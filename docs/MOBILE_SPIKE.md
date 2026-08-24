@@ -104,16 +104,21 @@ que empaqueta `libpython3.x.so` y ejecuta yt-dlp **in-process vía JNI**).
 
 ### Consecuencia para la arquitectura (cambia plan 1.2/1.4)
 
-- **Los 6 puntos de spawn de yt-dlp NO pueden usar `app.shell().sidecar()`**
-  en Android: no hay binario. En móvil hay dos opciones:
+- **El plugin shell NO puede lanzar sidecars en Android** (verificado en
+  `ShellPlugin.kt` de `tauri-plugin-shell`: solo implementa `open` de URLs;
+  `spawn`/`execute`/`kill` no existen en móvil). Por tanto, **`app.shell().sidecar()`
+  no está disponible para yt-dlp ni ffmpeg en Android**.
+- **yt-dlp**: los 6 puntos de spawn NO pueden usar `sidecar()`. En móvil:
   1. **Chaquopy in-process** (recomendado): el proyecto Android (`src-tauri/gen/android`)
      añade el plugin Chaquopy + `youtubedl-android`, y un comando Rust móvil
      (`#[cfg(mobile)]`) delega en un **bridge JNI** hacia la API Java
      (o un `@JavascriptInterface` en la WebView si se prefiere evitar JNI).
   2. **Motor de descarga en-proceso** (fallback del plan): implementar la
      extracción vía `innertube`/`yt-dlp` REST en Rust (mucho mayor esfuerzo).
-- **ffmpeg SÍ se mantiene como sidecar** (sección 3): la conversión
-  M4A/MP3 puede seguir siendo subproceso `app.shell().sidecar("ffmpeg")`.
+- **ffmpeg**: el binario arm64 se empaqueta en el APK (Tauri `externalBin` lo
+  incluye; el binario queda accesible en el `appDir` del dispositivo) y se
+  ejecuta con **`std::process::Command`** (no con el plugin shell). La
+  conversión M4A/MP3 sigue siendo subproceso, pero por `std::process` en móvil.
 - Los flags de la cola (`pause/resume` por señales) ya estaban previstos como
   desktop-only (1.4); el pivot a Chaquopy refuerza que el spawn de yt-dlp en
   móvil no pasa por `binaries.rs`.
@@ -135,6 +140,10 @@ que empaqueta `libpython3.x.so` y ejecuta yt-dlp **in-process vía JNI**).
   LGPL (ffmpeg-kit-audio / full) y en builds GPL; el binario prebuilt de
   hzw1199 es `--disable-gpl` → **validar `-c:a libmp3lame`** en m2 (si no,
   usar ffmpeg-kit `audio`/`full` que sí incluye LAME).
+- **Ejecución en móvil:** el plugin shell en Android solo implementa `open`;
+  `app.shell().sidecar()` **no existe** en móvil. El binario arm64 se empaqueta
+  con Tauri (`externalBin`) y se ejecuta con **`std::process::Command`** en los
+  comandos Rust móviles (el binario queda accesible en el `appDir`).
 
 **Tamaño estimado APK:** ffmpeg sidecar ~15 MB + Chaquopy/yt-dlp ~25-40 MB →
 APK arm64 en el rango 60-100 MB (comparable a YTDLnis 64 MB). Aceptable para
@@ -149,17 +158,20 @@ el plan:
 | --- | --- | --- |
 | Toolchain Android en Windows portable | ✅ GO | `tauri android init` + `cargo check` cruzado OK |
 | Árbol Rust compila para Android | ✅ GO | Solo falta el recurso sidecar (m2) |
-| ffmpeg arm64 | ✅ GO | Binario estático verificado (ELF AArch64) |
+| ffmpeg arm64 | ✅ GO | Binario estático verificado (ELF AArch64); se ejecuta con `std::process` (el plugin shell en Android solo hace `open`) |
 | yt-dlp arm64 standalone | ❌ NO-GO | **Pivot a Chaquopy** (CPython + yt-dlp vía JNI) |
+| Plugin shell en Android | ⚠️ Parcial | Solo `open` de URLs; **sin** `sidecar()`/`spawn` |
 | Play Store / sideload | ✅ GO | Distribución sideload (fuera de Play Store) |
 
 **Ajustes al plan derivados del spike:**
 
-1. **m2-sidecars** cambia: sidecar solo para `ffmpeg`. `yt-dlp` se integra vía
-   **Chaquopy** en el proyecto Android generado (`src-tauri/gen/android/`), con
-   un bridge (JNI o `@JavascriptInterface`) y comandos Tauri móviles
-   (`#[cfg(mobile)]`) que sustituyen a los 6 spawn points de yt-dlp en móvil.
-   `binaries::ensure()` sigue saltándose en móvil.
+1. **m2-sidecars** cambia: sidecar solo para `ffmpeg`, ejecutado con
+   `std::process::Command` (no `app.shell().sidecar()`, que no existe en
+   Android). `yt-dlp` se integra vía **Chaquopy** en el proyecto Android
+   generado (`src-tauri/gen/android/`), con un bridge (JNI o
+   `@JavascriptInterface`) y comandos Tauri móviles (`#[cfg(mobile)]`) que
+   sustituyen a los 6 spawn points de yt-dlp en móvil. `binaries::ensure()`
+   sigue saltándose en móvil.
 2. **1.4/cola:** `pause/resume` sigue siendo desktop-only; en móvil el flujo es
    cancelar + `--download-archive` (sin cambio de plan).
 3. **1.6/player offline:** la cache y descarga de audio usan `document_dir`; el
@@ -174,3 +186,5 @@ el plan:
 - [ ] Validar `-c:a libmp3lame` en el binario ffmpeg elegido (m2).
 - [ ] Instalar Chaquopy en `src-tauri/gen/android` y probar
       `yt-dlp --version` en dispositivo/emulador (m2).
+- [ ] Probar la ejecución de ffmpeg en Android con `std::process::Command`
+      (el plugin shell móvil solo hace `open`) (m2).

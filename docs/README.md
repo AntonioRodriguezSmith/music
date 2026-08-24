@@ -5,8 +5,8 @@
 ## Móvil (en desarrollo)
 
 - [MOBILE.md](./MOBILE.md) — arquitectura, flujo de datos y limitaciones de la app Android (pendiente: Fase 1 del plan).
-- [MOBILE_SETUP.md](./MOBILE_SETUP.md) — toolchain Android, keystore, firma de APK, distribución sideload (pendiente).
-- [MOBILE_SPIKE.md](./MOBILE_SPIKE.md) — veredicto del spike de factibilidad (toolchain, sidecars arm64) (pendiente).
+- [MOBILE_SETUP.md](./MOBILE_SETUP.md) — toolchain Android portable, keystore, firma de APK, distribución sideload.
+- [MOBILE_SPIKE.md](./MOBILE_SPIKE.md) — veredicto del spike de factibilidad (toolchain, sidecars arm64).
 
 ## Fases
 

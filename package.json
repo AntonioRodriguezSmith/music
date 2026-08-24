@@ -6,8 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:mobile": "vite build --mode mobile",
     "preview": "vite preview",
     "tauri": "powershell -ExecutionPolicy Bypass -File ./scripts/tauri-windows.ps1",
+    "tauri:android": "powershell -ExecutionPolicy Bypass -File ./scripts/tauri-windows.ps1 android",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
