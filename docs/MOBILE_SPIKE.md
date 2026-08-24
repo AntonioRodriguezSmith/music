@@ -181,10 +181,13 @@ el plan:
 
 ## 5. Pendientes del spike que se cierran en Fase 1
 
-- [ ] Validar `tauri android build --debug` real (m1) — el `cargo check` ya
-      compila, pero falta el build Gradle completo.
-- [ ] Validar `-c:a libmp3lame` en el binario ffmpeg elegido (m2).
+- [x] Validar el build Android real — `tauri android build --debug` completo requiere
+      **Windows Developer Mode** (symlink del CLI; ver `MOBILE_SETUP.md`). Sin él se
+      validó el equivalente: `cargo build --target aarch64-linux-android` +
+      `gradlew :app:assembleArm64Debug` → `app-arm64-debug.apk` (m1/m8).
+- [x] Validar `-c:a libmp3lame` en el binario ffmpeg elegido — presente en
+      `libffmpeg.so` (14.8 MB, `hzw1199/Android-FFmpeg-Prebuilt`). MP3 disponible (m2/m8).
 - [ ] Instalar Chaquopy en `src-tauri/gen/android` y probar
-      `yt-dlp --version` en dispositivo/emulador (m2).
+      `yt-dlp --version` en dispositivo/emulador (pendiente de la Fase 2).
 - [ ] Probar la ejecución de ffmpeg en Android con `std::process::Command`
-      (el plugin shell móvil solo hace `open`) (m2).
+      (el plugin shell móvil solo hace `open`) (pendiente de la Fase 2).
