@@ -89,6 +89,8 @@ Asset protocol: scope `Music/**` (incluye `playlists/`).
 
 [`src/providers/player_session_context.jsx`](../src/providers/player_session_context.jsx)
 
+El provider conserva reproducción, cola de sesión y listas; las descargas de caché/offline viven en [use_player_downloads.js](../src/hooks/use_player_downloads.js) (jobs `cache`/`playlist`, promote cache→lista, tracking de `savingIds`) y los helpers puros en [player_helpers.js](../src/lib/player_helpers.js) (`toPlaylistItem`, `countPlayerBusy`, `isRateLimitMessage`, `keepWindowIds`).
+
 | Acción | Comportamiento |
 |--------|----------------|
 | **Reproducir** | No añade a lista. Resolve local → si falta, un job `cache`. Reutiliza **inflight** del mismo `videoId`. |
@@ -194,11 +196,13 @@ Orden sugerido: P10a → P10b → P10c → P10e → P10d (opcional).
 |------|------|
 | Listas | `src/lib/playlists.js` |
 | Sesión | `src/providers/player_session_context.jsx` |
-| UI | `src/player/PlayerPage.jsx` |
+| Descargas caché/offline | `src/hooks/use_player_downloads.js` |
+| Helpers player | `src/lib/player_helpers.js` |
+| UI | `src/player/PlayerPage.jsx`, `src/player/PlaylistPanel.jsx` |
 | Rust cache/listas | `src-tauri/src/player_cache.rs` |
 | yt-dlp | `src-tauri/src/ytdlp.rs` |
 | Cola | `src-tauri/src/queue.rs`, `state.rs` |
-| Sidebar Player | `src/components/menu/sidebar.jsx`, `player_folder_panel.jsx` |
+| Sidebar Player | `src/components/menu/sidebar.jsx` + `sidebar/` (`QueueList`, `HistoryList`, `SessionQueueList`, `SidebarCollapsed`) |
 
 ---
 

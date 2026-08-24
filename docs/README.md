@@ -2,21 +2,30 @@
 
 Índice del fork (sin duplicar el README raíz):
 
+## Móvil (en desarrollo)
+
+- [MOBILE.md](./MOBILE.md) — arquitectura, flujo de datos y limitaciones de la app Android (pendiente: Fase 1 del plan).
+- [MOBILE_SETUP.md](./MOBILE_SETUP.md) — toolchain Android, keystore, firma de APK, distribución sideload (pendiente).
+- [MOBILE_SPIKE.md](./MOBILE_SPIKE.md) — veredicto del spike de factibilidad (toolchain, sidecars arm64) (pendiente).
+
 ## Fases
 
-- [PHASE4.md](./PHASE4.md) — Fase 4 (**MVP**): modo Player; [SPEC](./phase4/SPEC.md) · [AUDIT](./PHASE4_AUDIT.md)
-- [PHASE4_SETUP.md](./PHASE4_SETUP.md) / [PHASE4_CHECKLIST.md](./PHASE4_CHECKLIST.md)
+- [PHASE4.md](./PHASE4.md) — Fase 4 (**MVP**): modo Player; [SPEC](./phase4/SPEC.md) · [AUDIT](./archive/PHASE4_AUDIT.md)
+- [PHASE4_SETUP.md](./PHASE4_SETUP.md) / [PHASE4_CHECKLIST.md](./archive/PHASE4_CHECKLIST.md)
 - [PHASE3.md](./PHASE3.md) — Fase 3 (**publicada** [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0)): distribución, portable, updater; Authenticode opcional/aplazado
 - [PHASE3_SETUP.md](./PHASE3_SETUP.md) — build release, secrets CI, updater, notas uso personal
-- [PHASE3_CHECKLIST.md](./PHASE3_CHECKLIST.md) / [PHASE3_AUDIT.md](./PHASE3_AUDIT.md)
+- [PHASE3_CHECKLIST.md](./archive/PHASE3_CHECKLIST.md) / [PHASE3_AUDIT.md](./archive/PHASE3_AUDIT.md)
 - [PHASE2.md](./PHASE2.md) — Fase 2 (cerrada): cola, cookies Método A, CI, seguridad
 - [PHASE2_SETUP.md](./PHASE2_SETUP.md) — setup local (`.env` + cookies.txt)
 - [PHASE1.md](./PHASE1.md) — Fase 1 (cerrada)
-- [archive/](./archive/) — auditorías y checklists Fase 1–2
+- [archive/](./archive/) — auditorías y checklists cerradas Fase 1–4
 
 ## Operación
 
 - [PLAYER_PLAYLISTS.md](./PLAYER_PLAYLISTS.md) — Player, listas offline, rate-limit YouTube (P10a–c/e; P10d parking)
+- [FLUJO_DESCARGA.md](./FLUJO_DESCARGA.md) — flujo end-to-end de la descarga (huecos y verificaciones pendientes)
+- [ERRORS.md](./ERRORS.md) — biblioteca de errores (`{ code, message, detail }` + deuda conocida)
+- [MUSICA_PIPELINE.md](./MUSICA_PIPELINE.md) — pipeline de gestión de música (`scripts/musica`)
 - [TAURI_URLS.md](./TAURI_URLS.md) — índice de URLs Tauri 1 (histórico) + Tauri 2 (canónico)
 - [WINDOWS.md](./WINDOWS.md) — desarrollo y build release en Windows
 - [LAUNCHER_WINDOWS.md](./LAUNCHER_WINDOWS.md) — splash + acceso directo Escritorio

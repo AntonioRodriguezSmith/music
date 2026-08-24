@@ -40,13 +40,15 @@ Use the native Clip Harbour window. On Windows you can also use the **Clip Harbo
 | Symptom | Check |
 |---------|--------|
 | Falta ZIP portable | `npm run tauri -- build` luego `npm run pack:portable:windows` → `%LOCALAPPDATA%\clip_harbour-target\release\bundle\portable\` |
+| `error: Failed to spawn yt-dlp: os error 2` | No ocurre con el exe actual: yt-dlp/ffmpeg van incrustados y se extraen a `%LOCALAPPDATA%\clip_harbour\bin\`. Si usas una build antigua, copia `yt-dlp.exe`/`ffmpeg.exe` junto al exe o borra la carpeta `%LOCALAPPDATA%\clip_harbour\bin` y relanza. |
+| `ERROR: Unable to create directory: [WinError 5] Acceso denegado: 'C:\Users\rodri'` | La carpeta de descarga persistida apunta a otro usuario. La app la corrige automáticamente a `%USERPROFILE%\Music\ClipHarbour`. Si usas una build antigua, elige de nuevo la carpeta de descarga en la sidebar. |
 | “Buscar actualizaciones” falla | Comprueba Release [v0.1.0](https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0) / `latest.json`. Sin release firmado el mensaje es claro; la app sigue usable. Ver [PHASE3_SETUP.md](./PHASE3_SETUP.md). |
 | Firma Authenticode skip | Sin thumbprint / `CLIP_HARBOUR_PFX_BASE64` (CI) o `PFX_PATH` (local) → `sign-windows` exit 0 a propósito. Normal en uso personal (no hay PFX gratis de confianza). |
 | SmartScreen / “editor desconocido” | Esperado sin Authenticode; *Más información* → *Ejecutar de todos modos*, o usa el portable/`clip_harbour.exe` local. |
 | `cargo check` / crates.io schannel | Flake de red; limpiar cache corrupt en `.cargo/registry/cache`, `curl -C - --ssl-no-revoke`, o reintentar. Log: `%TEMP%\clip-harbour-cargo-check.log`. CI suele ser más fiable. |
 | IDE: *Context access might be invalid* en secrets | Falso positivo del language server con secrets custom. El workflow usa `fromJSON(toJSON(secrets)).…`; ver [PHASE3_SETUP.md](./PHASE3_SETUP.md). |
 | Log CI muestra secretos | No debe: List solo imprime `CLIP_HARBOUR_SIGNING_CONFIGURED` (true/false). |
-| Updater private key | Solo en `.tauri/` (gitignored) o secrets CI `TAURI_SIGNING_PRIVATE_KEY`. Pubkey en `tauri.conf.json`. |
+| Updater private key | Solo en `%LOCALAPPDATA%\clip_harbour\secrets\` (fuera del repo) o secrets CI `TAURI_SIGNING_PRIVATE_KEY`. Pubkey en `tauri.conf.json`. |
 
 ## Queue emptied when opening a video
 
@@ -99,7 +101,7 @@ If the UI is blank after tightening CSP (`script-src 'self'`), temporarily resto
 
 `npm run tauri -- build` uses `CARGO_TARGET_DIR`. Locally that defaults to `%LOCALAPPDATA%\clip_harbour-target`. The Actions release workflow **must** set `CARGO_TARGET_DIR` to `src-tauri/target` (see `.github/workflows/release-windows.yml`) so `upload-artifact` finds MSI/NSIS. If you override the env locally, collect artefacts from that same directory.
 
-If the job fails with **MSVC not found**, `scripts/setup-windows-env.ps1` could not locate `vcvars64.bat`. On GitHub Actions it should use `vswhere`; locally install VS “Desktop development with C++” or Build Tools.
+If the job fails with **MSVC not found**, `scripts/setup-windows-env.ps1` could not locate `vcvars64.bat`. On GitHub Actions it should use `vswhere`; locally install the portable MSVC toolchain with `msvcup` (`msvcup install %LOCALAPPDATA%\msvcup\toolchain22621 --manifest-update-off autoenv msvc-14.44.17.14 sdk-10.0.22621.7`) — no Visual Studio required. Use SDK 10.0.22621.7, not 26100: the 26100 SDK splits shared headers (`winapifamily.h`) into OneCoreUAP MSI packages msvcup does not install.
 
 ## CI Windows lento / cargo check skipped
 

@@ -9,7 +9,7 @@ Cerrar Fase 4 con audit y changelog.
 
 ## Entrega
 
-- `docs/PHASE4_AUDIT.md`
+- `docs/archive/PHASE4_AUDIT.md`
 - Checklist completo; auditar cierres + PRs en master
 - CHANGELOG cierre fase; no archivar Fase 3
 

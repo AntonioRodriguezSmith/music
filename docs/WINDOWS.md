@@ -7,7 +7,7 @@ Docs for this stack: [Tauri 2](https://v2.tauri.app/) (not [Tauri 1](https://v1.
 
 ## Quick start (Windows)
 
-1. Install **Node.js**, **Rust** (`rustup`), **WebView2**, and **MSVC** (“Desktop development with C++” or Build Tools) + **Windows 10/11 SDK**.
+1. Install **Node.js**, **Rust** (`rustup`), **WebView2**, and an **MSVC toolchain**. **No Visual Studio required**: install the portable MSVC toolchain + Windows SDK with [`msvcup`](https://github.com/marler8997/msvcup) (`msvcup install %LOCALAPPDATA%\msvcup\toolchain22621 --manifest-update-off autoenv msvc-14.44.17.14 sdk-10.0.22621.7`). Use **SDK 10.0.22621.7**, not 26100: the 26100 SDK splits shared headers (`winapifamily.h`, …) into OneCoreUAP MSI packages that msvcup does not install. `scripts/setup-windows-env.ps1` detects `%LOCALAPPDATA%\msvcup\toolchain22621\vcvars-x64.bat` automatically (and falls back to `toolchain\` or a Visual Studio/Build Tools install if present).
 2. `npm install`
 3. `npm run fetch:sidecars:windows` — downloads `yt-dlp` and `ffmpeg` into `src-tauri/binaries/` with the Tauri triple names.
 4. Optional: copy `.env.example` → `.env` and set `VITE_DEFAULT_DOWNLOAD_PATH`.
@@ -28,7 +28,7 @@ npm run fetch:sidecars:windows   # if not already present
 npm run tauri -- build
 ```
 
-Uses `scripts/tauri-windows.ps1` (MSVC + `CARGO_TARGET_DIR`, default `%LOCALAPPDATA%\clip_harbour-target`).
+Uses `scripts/tauri-windows.ps1` (MSVC via `msvcup` or VS, + `CARGO_TARGET_DIR`, default `%LOCALAPPDATA%\clip_harbour-target`).
 
 Outputs (relative to `CARGO_TARGET_DIR`):
 
@@ -37,6 +37,8 @@ Outputs (relative to `CARGO_TARGET_DIR`):
 - `release\bundle\nsis\clip_harbour_0.1.0_x64-setup.exe`
 - `release\bundle\portable\clip_harbour-portable-win64.zip` — `npm run pack:portable:windows` (incluye `README.txt` desde [PORTABLE_README.txt](./PORTABLE_README.txt))
 - `release\bundle\updater\latest.json` — `npm run updater:latest` (stub local; en GitHub Release v0.1.0 ya va firmado)
+
+El `clip_harbour.exe` es **autocontenido**: yt-dlp y ffmpeg van incrustados y se extraen al primer arranque a `%LOCALAPPDATA%\clip_harbour\bin\` ([binaries.rs](../src-tauri/src/binaries.rs)). No hace falta copiar los sidecars junto al exe. Si existen copias junto al exe (layout portable/instalador) se usan primero, por lo que la opción portátil de 3 archivos sigue funcionando.
 
 Installers are **unsigned** by default (`npm run sign:windows` skips without cert — fine for personal use). Upstream GitHub releases remain Linux-oriented; this fork publishes Windows builds via Actions + [Releases](https://github.com/AntonioRodriguezSmith/music/releases).
 
@@ -129,7 +131,7 @@ CI ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)): Windows smoke al
 | YouTube “Sign in to confirm you’re not a bot” | Sidebar → **Elegir cookies.txt** (Método A / Netscape). Ver [PHASE2_SETUP.md](./PHASE2_SETUP.md) y [cookies_info.md](./cookies/cookies_info.md). Actualiza yt-dlp: `npm run fetch:sidecars:windows`. |
 | Stuck on Fetching… / invoke “does nothing” | Are you in the **desktop** window, not the browser? Open DevTools (Ctrl+Shift+I) there. |
 | Sidecar / yt-dlp errors | Re-run `npm run fetch:sidecars:windows`; confirm files exist under `src-tauri/binaries/`. |
-| MSVC / `winapifamily.h` missing | Install full Windows SDK; `setup-windows-env.ps1` prepends system SDK includes. |
+| MSVC / `winapifamily.h` missing | msvcup installs the Windows SDK, but SDK 10.0.26100 splits shared headers (`winapifamily.h`) into OneCoreUAP MSI packages msvcup does not install — use SDK 10.0.22621.7: `msvcup install %LOCALAPPDATA%\msvcup\toolchain22621 --manifest-update-off autoenv msvc-14.44.17.14 sdk-10.0.22621.7`. `setup-windows-env.ps1` prepends SDK includes. |
 | Port 1420 in use | Kill leftover `node` / Vite processes, then restart the launcher. |
 | Slow or locked builds on Proton Drive | `CARGO_TARGET_DIR` is set to `%LOCALAPPDATA%\clip_harbour-target`. |
 | CI Windows lento / cargo check skipped | Primera vez tras lockfile = cold cache. `cargo check` se salta si no cambia `src-tauri/**`. Local: `npm run check:rust` / `check:rust:bg`. Ver [TROUBLESHOOTING.md](./TROUBLESHOOTING.md). |

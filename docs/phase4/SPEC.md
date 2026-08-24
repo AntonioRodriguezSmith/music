@@ -7,7 +7,7 @@ Fuente de verdad técnica. El [master](../PHASE4.md) solo enlaza y recoge cierre
 | | `/` Descarga | `/player` |
 |--|--|--|
 | UI | Densa | Ligera; sidebar compacta |
-| Media | `download_path` | `C:\Users\rodri\Music\MEmu video` (override `CLIP_HARBOUR_PLAYER_DIR`) |
+| Media | `download_path` | `%USERPROFILE%\Music\MEmu video` (override `CLIP_HARBOUR_PLAYER_DIR`) |
 | CTA | Configurar | **Descargar audio** → cola `bestaudio` + historial |
 | Default | Sí | Opt-in `localStorage` (`clip_harbour_app_mode`) |
 
@@ -57,7 +57,7 @@ flowchart LR
 | P6 | `lib/playlists.js` + UI lista |
 | P7 | Bridge CTA → `download_queue_context` |
 | P8 | TROUBLESHOOTING, i18n resto, tests |
-| P9 | `PHASE4_AUDIT.md`, checklist final, CHANGELOG cierre |
+| P9 | `archive/PHASE4_AUDIT.md`, checklist final, CHANGELOG cierre |
 
 ## Ritual
 

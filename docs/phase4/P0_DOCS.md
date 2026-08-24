@@ -9,7 +9,7 @@ Crear hub mínimo, SPEC y subplanes cortos P0–P9 sin código de app.
 
 ## Entrega
 
-- `docs/PHASE4.md`, `PHASE4_SETUP.md`, `PHASE4_CHECKLIST.md`
+- `docs/PHASE4.md`, `PHASE4_SETUP.md`, `docs/archive/PHASE4_CHECKLIST.md`
 - `docs/phase4/SPEC.md`, `_TEMPLATE.md`, `P0`…`P9`
 - Índice `docs/README.md`; CHANGELOG scaffold
 

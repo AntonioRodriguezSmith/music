@@ -2,6 +2,30 @@
 
 Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
+## 2026-08 — Rutas multi-usuario robustas + cookies TXT siempre funcional
+
+- **Carpeta de descarga:** nuevo `sanitize_download_dir` en [ytdlp.rs](../src-tauri/src/ytdlp.rs): crea la carpeta pedida y, si no es usable (ruta de otro usuario, p. ej. `C:\Users\rodri\…`, o permiso denegado), cae a `%USERPROFILE%\Music\ClipHarbour`. `run_download` y el nuevo comando `resolve_download_dir` lo aplican al arrancar/descargar, evitando `WinError 5` de yt-dlp.
+- **Frontend:** `download_path_context.jsx` valida la ruta persistida con `resolve_download_dir` al montar y la corrige en `localStorage` si apunta a otro usuario.
+- **Cookies:** `refresh_cookies_all` conserva el `cookies_merged.txt` previo cuando ningún navegador produce cookies (siempre queda un TXT funcional en su ruta).
+- **`.env`:** rutas actualizadas de `rodri` a `nexux` (build actual).
+- **Docs:** [cookies_info.md](./cookies/cookies_info.md), [TROUBLESHOOTING.md](./TROUBLESHOOTING.md). `cargo test --lib` (30) OK.
+
+## 2026-08 — EXE autocontenido (binarios embebidos)
+
+- **Un solo `.exe`:** yt-dlp y ffmpeg se incrustan en `clip_harbour.exe` (`include_bytes!`). Al primer arranque se extraen a `%LOCALAPPDATA%\clip_harbour\bin\` y se re-escriben solo si cambian de tamaño.
+- **Resolución en runtime** (nuevo [binaries.rs](../src-tauri/src/binaries.rs)): 1) copia junto al exe (layout portable/instalador), 2) layout dev (`*-x86_64-pc-windows-msvc.exe`), 3) copia embebida extraída. La opción portátil de 3 archivos sigue funcionando como secundaria.
+- **Todos los lanzamientos** de yt-dlp/ffmpeg usan `ShellExt::command(ruta)` en lugar de `.sidecar(...)`; `--ffmpeg-location` apunta al binario resuelto.
+- **`externalBin` se mantiene** en `tauri.conf.json`, por lo que MSI/NSIS/portable ZIP siguen empaquetando los binarios junto al exe (sin romper el flujo anterior).
+- **Docs:** [WINDOWS.md](./WINDOWS.md), [PHASE3_SETUP.md](./PHASE3_SETUP.md), [TROUBLESHOOTING.md](./TROUBLESHOOTING.md). `cargo test --lib` (30) OK.
+
+## 2026-08 — Refactor: dividir archivos grandes de `src`
+
+- **PlayerSession:** orquestación de caché/offline extraída a [use_player_downloads.js](../src/hooks/use_player_downloads.js); helpers puros (`toPlaylistItem`, `countPlayerBusy`, `isRateLimitMessage`, `keepWindowIds`) a [player_helpers.js](../src/lib/player_helpers.js). El provider conserva reproducción/cola/listas.
+- **Sidebar:** sub-componentes en `src/components/menu/sidebar/` (`QueueList`, `HistoryList`, `SessionQueueList`, `SidebarCollapsed`); `sidebar.jsx` queda como compositor.
+- **Búsqueda:** `ResultRow` y `PreviewPanel` extraídos de `results.jsx`; `SearchHistoryDropdown` extraído de `search_bar.jsx`.
+- **Player:** panel derecho de listas extraído a `src/player/PlaylistPanel.jsx`.
+- **Docs:** [FLUJO_DESCARGA.md](./FLUJO_DESCARGA.md) y [PLAYER_PLAYLISTS.md](./PLAYER_PLAYLISTS.md) actualizados. `npm run test` (85) + `npm run smoke:windows` (vitest + `cargo test --lib` 30) OK.
+
 ## 2026-07 — P10 Player rate-limit + listas UX
 
 - **P10a:** `CLIP_HARBOUR_YT_SLEEP=soft\|strict`, gap cola 4/8 s, banner rate-limit, prefetch opt-in.
@@ -19,13 +43,13 @@ Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 ## 2026-07 — Phase 4 Player MVP (P0–P9)
 
 - **Mode:** titlebar toggle Descarga|Player; route `/player` — search, playlist, cache play ≤720p, Descargar audio.
-- **Docs:** [PHASE4.md](./PHASE4.md) · [phase4/SPEC.md](./phase4/SPEC.md) · [PHASE4_AUDIT.md](./PHASE4_AUDIT.md).
+- **Docs:** [PHASE4.md](./PHASE4.md) · [phase4/SPEC.md](./phase4/SPEC.md) · [archive/PHASE4_AUDIT.md](./archive/PHASE4_AUDIT.md).
 - **Backend:** `purpose=cache`, `player_cache_dir` / `purge_player_cache`, CSP `media-src` asset.
 - **PRs:** individual `phase4(P#)` still pending (implemented in one pass).
 
 ## 2026-07 — Phase 4 docs scaffold (P0)
 
-- **Hub:** [PHASE4.md](./PHASE4.md) (mapa + cierres only) · [phase4/SPEC.md](./phase4/SPEC.md) · [PHASE4_SETUP.md](./PHASE4_SETUP.md) · [PHASE4_CHECKLIST.md](./PHASE4_CHECKLIST.md).
+- **Hub:** [PHASE4.md](./PHASE4.md) (mapa + cierres only) · [phase4/SPEC.md](./phase4/SPEC.md) · [PHASE4_SETUP.md](./PHASE4_SETUP.md) · [archive/PHASE4_CHECKLIST.md](./archive/PHASE4_CHECKLIST.md).
 - **Subplans:** [phase4/](./phase4/) P0–P9.
 
 ## 2026-07 — Phase 3 release ops
@@ -38,7 +62,7 @@ Windows-oriented fork of Clip Harbour (Tauri 2 + React + yt-dlp/ffmpeg).
 
 ## 2026-07 — Phase 3
 
-- **Summary:** [PHASE3.md](./PHASE3.md) · setup [PHASE3_SETUP.md](./PHASE3_SETUP.md) · checklist [PHASE3_CHECKLIST.md](./PHASE3_CHECKLIST.md) · audit [PHASE3_AUDIT.md](./PHASE3_AUDIT.md).
+- **Summary:** [PHASE3.md](./PHASE3.md) · setup [PHASE3_SETUP.md](./PHASE3_SETUP.md) · checklist [archive/PHASE3_CHECKLIST.md](./archive/PHASE3_CHECKLIST.md) · audit [archive/PHASE3_AUDIT.md](./archive/PHASE3_AUDIT.md).
 - **Distribution:** portable ZIP (`pack:portable:windows`), desktop shortcut installer, CH icons regenerated into `src-tauri/icons`.
 - **Signing:** `sign-windows.ps1` covers release tree; CI uses `CLIP_HARBOUR_PFX_BASE64` → temp PFX (no local path secret); logs only `CLIP_HARBOUR_SIGNING_CONFIGURED`.
 - **Updater:** `tauri-plugin-updater` + process relaunch; endpoint GitHub Releases `latest.json`.

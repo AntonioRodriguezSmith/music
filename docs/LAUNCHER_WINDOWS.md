@@ -57,7 +57,7 @@ npm run install:shortcut:windows
 Manual (equivalente):
 
 ```powershell
-$root = "C:\Users\rodri\Proton Drive\Proyectos\music"   # ajusta si hace falta
+$root = (Get-Location).Path   # o: $root = "C:\Users\<tu-usuario>\...\music"
 $desktop = [Environment]::GetFolderPath("Desktop")
 $shell = New-Object -ComObject WScript.Shell
 $sc = $shell.CreateShortcut((Join-Path $desktop "Clip Harbour.lnk"))

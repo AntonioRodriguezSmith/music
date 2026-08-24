@@ -16,7 +16,7 @@ Artefactos tipicos bajo `%LOCALAPPDATA%\clip_harbour-target\release\`:
 
 | Pieza | Ruta |
 |-------|------|
-| Exe | `clip_harbour.exe` |
+| Exe | `clip_harbour.exe` — **autocontenido**: yt-dlp/ffmpeg incrustados y extraídos a `%LOCALAPPDATA%\clip_harbour\bin\` en el primer arranque |
 | MSI / NSIS | `bundle\msi\…`, `bundle\nsis\…` |
 | Portable ZIP | `bundle\portable\clip_harbour-portable-win64.zip` (incluye `README.txt` desde [PORTABLE_README.txt](./PORTABLE_README.txt)) |
 | Updater stub | `bundle\updater\latest.json` |

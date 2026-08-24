@@ -8,7 +8,7 @@ Método A ([PHASE2_SETUP.md](./PHASE2_SETUP.md)). Sin cookies → cache/play pue
 
 ## Cache / carpeta Player
 
-Path por defecto: `C:\Users\rodri\Music\MEmu video`  
+Path por defecto: `%USERPROFILE%\Music\MEmu video` (se resuelve al usuario actual)
 Override opcional: `CLIP_HARBOUR_PLAYER_DIR` en el entorno.  
 
 | Subpath | Uso |

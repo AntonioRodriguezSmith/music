@@ -132,7 +132,7 @@ npm run pack:portable:windows     # ZIP portable (tras build)
 npm run sign:windows
 ```
 
-Requisitos: workload C++ de MSVC, Windows SDK, WebView2. El launcher pone `CARGO_TARGET_DIR` bajo `%LOCALAPPDATA%` para no escribir builds en carpetas sincronizadas (p. ej. Proton Drive). Artefactos: `%LOCALAPPDATA%\clip_harbour-target\release\bundle\` (ver [docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md), [docs/WINDOWS.md](docs/WINDOWS.md)).
+Requisitos: toolchain MSVC portable (via [msvcup](https://github.com/marler8997/msvcup), **sin Visual Studio**), Windows SDK, WebView2. El launcher pone `CARGO_TARGET_DIR` bajo `%LOCALAPPDATA%` para no escribir builds en carpetas sincronizadas (p. ej. Proton Drive). Artefactos: `%LOCALAPPDATA%\clip_harbour-target\release\bundle\` (ver [docs/PHASE3_SETUP.md](docs/PHASE3_SETUP.md), [docs/WINDOWS.md](docs/WINDOWS.md)).
 
 Usa siempre la **ventana de la app de escritorio** para probar búsqueda y descarga.
 

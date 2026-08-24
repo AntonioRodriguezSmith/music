@@ -32,7 +32,7 @@ Siempre probar en la **ventana nativa** Tauri, no en el navegador (`localhost:14
 
 ## Cómo generar instaladores Windows
 
-Requisitos: MSVC + Windows SDK + WebView2 + sidecars (`npm run fetch:sidecars:windows`).
+Requisitos: toolchain MSVC portable (via msvcup, sin Visual Studio) + Windows SDK + WebView2 + sidecars (`npm run fetch:sidecars:windows`).
 
 ```powershell
 npm run tauri -- build

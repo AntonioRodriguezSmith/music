@@ -6,11 +6,15 @@ Release: https://github.com/AntonioRodriguezSmith/music/releases/tag/v0.1.0
 CONTENIDO DEL ZIP
 ══════════════════════════════════════
   clip_harbour.exe   — aplicacion (Tauri)
-  yt-dlp.exe         — descargas
-  ffmpeg.exe         — conversion de audio/video
+  yt-dlp.exe         — descargas (opcional)
+  ffmpeg.exe         — conversion de audio/video (opcional)
   README.txt         — este archivo
 
-Los tres .exe deben permanecer en la MISMA carpeta.
+NOTA: clip_harbour.exe es AUTOCONTENIDO. Lleva yt-dlp y ffmpeg
+incrustados y los extrae a %LOCALAPPDATA%\clip_harbour\bin\ en el
+primer arranque. Puedes copiar SOLO clip_harbour.exe a cualquier
+carpeta y funcionara sin los otros dos archivos. Si yt-dlp.exe y
+ffmpeg.exe estan junto al exe, se usan esos (portable clasico).
 
 ══════════════════════════════════════
 REQUISITOS (PC destino)
@@ -42,7 +46,6 @@ PRIMER USO
   - En la sidebar: elige carpeta de descarga.
   - Cookies YouTube (recomendado): Metodo A — archivo cookies.txt
     (Netscape). Guia: docs/PHASE2_SETUP.md en el repo.
-  - Idioma: ES | EN en la sidebar.
   - Busca o pega una URL de YouTube y descarga.
 
 ══════════════════════════════════════
