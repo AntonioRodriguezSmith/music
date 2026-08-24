@@ -47,16 +47,15 @@ Al añadir o renombrar un código, actualiza en paralelo:
 ## Deuda conocida (baseline pre-limpieza)
 
 Registrada el 2026-08-24 como parte del baseline `f0-baseline` (antes de la
-reorg de scripts). No son regresiones de la limpieza, sino deuda pre-existente:
+reorg de scripts). No son regresiones de la limpieza, sino deuda pre-existente.
+Estado el 2026-08-24: **resuelto en `f0-verify`**.
 
-- **`e2e/smoke.spec.js` — "language toggle is visible in sidebar when
-  expanded"**: el test espera botones `ES`/`EN` en el sidebar, pero el refactor
-  pendiente del working tree eliminó el toggle de idioma del sidebar
-  (`src/components/menu/sidebar.jsx`; las claves `sidebar.langEs`/`langEn`
-  sobreviven en los JSON de i18n pero ya no se renderizan en ningún JSX).
-  Pendiente: actualizar el test o reintroducir el toggle (decisión de UX).
-- **`e2e/smoke.spec.js` — "player mode route renders search chrome"**: el test
-  navega a `/player` sin que `VITE_ENABLE_PLAYER=1` esté definido, por lo que
-  la ruta no existe y falla. El test debe arrancar Vite con
-  `VITE_ENABLE_PLAYER=1` (igual que la build móvil) o quedar fuera de la suite
-  mientras Player siga siendo feature-flagged.
+- ~~**`e2e/smoke.spec.js` — "language toggle is visible in sidebar when
+  expanded"**: el test esperaba botones `ES`/`EN` en el sidebar, pero el refactor
+  eliminó el toggle de idioma.~~ **Resuelto**: el test ahora verifica los tabs
+  Queue/History del sidebar real (`src/components/menu/sidebar.jsx`).
+- ~~**`e2e/smoke.spec.js` — "player mode route renders search chrome"**: el test
+  navegaba a `/player` sin `VITE_ENABLE_PLAYER=1`, por lo que la ruta no
+  existía.~~ **Resuelto**: `playwright.config.js` arranca Vite con
+  `VITE_ENABLE_PLAYER=1` (igual que la build móvil), y el test cubre la ruta
+  `/player` en verde.

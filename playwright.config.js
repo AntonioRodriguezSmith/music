@@ -15,5 +15,10 @@ export default defineConfig({
     url: "http://127.0.0.1:1420",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      // Player es feature-flagged; el e2e ejercita la ruta como la build móvil.
+      VITE_ENABLE_PLAYER: "1",
+    },
   },
 });

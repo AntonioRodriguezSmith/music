@@ -10,14 +10,14 @@ test("home renders brand and search chrome", async ({ page }) => {
   await expect(page.locator("#search")).toBeVisible();
 });
 
-test("language toggle is visible in sidebar when expanded", async ({ page }) => {
+test("sidebar expands showing queue and history tabs", async ({ page }) => {
   await page.goto("/");
   const expand = page.getByRole("button", { name: /Desplegar|Expand/i });
   if (await expand.isVisible()) {
     await expand.click();
   }
-  await expect(page.getByRole("button", { name: "ES", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "EN", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Cola|Queue/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Historial|History/i })).toBeVisible();
 });
 
 test("player mode route renders search chrome", async ({ page }) => {
