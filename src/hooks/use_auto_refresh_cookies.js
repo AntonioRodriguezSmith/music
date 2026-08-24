@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { isTauri } from "../lib/tauri_env";
+import { isMobile, isTauri } from "../lib/tauri_env";
 import { singleFlight } from "./auto_cookies_flight";
 
 /**
@@ -10,6 +10,9 @@ import { singleFlight } from "./auto_cookies_flight";
  * Single responsibility: the "auto-refresh from browser" effect. The callbacks
  * live in refs so the effect keeps running exactly once even if the parent
  * re-renders with new inline handlers.
+ *
+ * Desktop-only: mobile has no browser to extract from; the backend command
+ * itself returns a clear error, and we avoid firing it at all here.
  */
 export function useAutoRefreshCookies(onSuccess, onError) {
   const onSuccessRef = useRef(onSuccess);
@@ -18,7 +21,7 @@ export function useAutoRefreshCookies(onSuccess, onError) {
   onErrorRef.current = onError;
 
   useEffect(() => {
-    if (!isTauri()) return undefined;
+    if (!isTauri() || isMobile()) return undefined;
     let cancelled = false;
 
     singleFlight(() => invoke("refresh_cookies_all"))

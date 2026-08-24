@@ -21,6 +21,8 @@ use crate::models::{parse_video_details, DownloadConfig, Video};
 use crate::state::app_state;
 
 /// Cookies de sesión mínimas que indican una sesión de YouTube/Google válida.
+/// Solo se usa en el flujo desktop de auto-refresh (no hay navegadores en móvil).
+#[cfg_attr(target_os = "android", allow(dead_code))]
 const SESSION_COOKIE_NAMES: &[&str] = &["SID", "SSID", "HSID", "LOGIN_INFO", "__Secure-3PSID"];
 
 /// The ordered list of browsers tried by automatic cookie refresh. Firefox first
@@ -430,6 +432,7 @@ pub fn list_cookie_candidates(
 
 /// Returns true when `domain` belongs to YouTube / Google, mirroring the filter
 /// used by `scripts/filter-youtube-cookies.ps1`.
+#[cfg_attr(target_os = "android", allow(dead_code))]
 fn is_youtube_domain(domain: &str) -> bool {
     let d = domain.to_ascii_lowercase();
     d.contains("youtube")
@@ -444,6 +447,7 @@ fn is_youtube_domain(domain: &str) -> bool {
 /// name, expiry, normalized_line)` if the entry is well-formed and belongs to a
 /// YouTube/Google domain. Mirrors `filter-youtube-cookies.ps1` (line fields:
 /// domain, flag, path, secure, expiry, name, value).
+#[cfg_attr(target_os = "android", allow(dead_code))]
 fn parse_cookie_line(line: &str) -> Option<(String, String, String, i64, String)> {
     // Strip a UTF-8 BOM on the very first field if present.
     let line = line.strip_prefix('\u{FEFF}').unwrap_or(line);
@@ -490,6 +494,7 @@ fn parse_cookie_line(line: &str) -> Option<(String, String, String, i64, String)
 /// expiry, drop expired cookies, and write a UTF-8 (no BOM) Netscape file at
 /// `out_path`. Returns the number of cookies written. Errors when no usable
 /// session cookie is present (so the caller can try another browser).
+#[cfg_attr(target_os = "android", allow(dead_code))]
 fn enrich_cookies(
     raw_path: &str,
     out_path: &str,
@@ -607,7 +612,30 @@ pub async fn refresh_cookies_all(app: tauri::AppHandle) -> Result<String, String
 
 /// Core single-browser refresh used by both [`refresh_cookies`] and
 /// [`refresh_cookies_all`]. Always writes to `cookies_merged.txt`.
+///
+/// Android: no desktop browsers exist to extract cookies from
+/// (`--cookies-from-browser` cannot work), so this returns a clear error and
+/// the frontend falls back to importing a `cookies.txt` manually.
 async fn refresh_cookies_from(
+    app: tauri::AppHandle,
+    browser: &str,
+) -> Result<String, String> {
+    #[cfg(target_os = "android")]
+    {
+        let _ = (app, browser);
+        return Err(
+            "En móvil no hay navegadores de escritorio: importa un archivo cookies.txt en el panel de cookies."
+                .to_string(),
+        );
+    }
+    #[cfg(not(target_os = "android"))]
+    {
+        refresh_cookies_from_desktop(app, browser).await
+    }
+}
+
+#[cfg(not(target_os = "android"))]
+async fn refresh_cookies_from_desktop(
     app: tauri::AppHandle,
     browser: &str,
 ) -> Result<String, String> {

@@ -4,7 +4,14 @@ import { useTranslation } from "react-i18next";
  * Shows the current cookies.txt path plus the "choose file" / "clear" actions.
  * Pure presentation: dialog opening and persistence live in the parent.
  */
-export default function CookieFileField({ file, onPick, onClear, onRefresh, refreshing }) {
+export default function CookieFileField({
+  file,
+  onPick,
+  onClear,
+  onRefresh,
+  refreshing,
+  showRefresh = true,
+}) {
   const { t } = useTranslation();
   return (
     <div>
@@ -30,14 +37,16 @@ export default function CookieFileField({ file, onPick, onClear, onRefresh, refr
             {t("cookies.clearFile")}
           </button>
         ) : null}
-        <button
-          type="button"
-          disabled={refreshing}
-          className="p-1 px-2 border border-black rounded-full text-[10px] disabled:opacity-50"
-          onClick={onRefresh}
-        >
-          {refreshing ? t("cookies.refreshRunning") : t("cookies.refreshButton")}
-        </button>
+        {showRefresh ? (
+          <button
+            type="button"
+            disabled={refreshing}
+            className="p-1 px-2 border border-black rounded-full text-[10px] disabled:opacity-50"
+            onClick={onRefresh}
+          >
+            {refreshing ? t("cookies.refreshRunning") : t("cookies.refreshButton")}
+          </button>
+        ) : null}
       </div>
     </div>
   );

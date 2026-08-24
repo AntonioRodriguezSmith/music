@@ -10,6 +10,7 @@ import { useVideo } from "../../providers/video_context";
 import { useAutoRefreshCookies } from "../../hooks/use_auto_refresh_cookies";
 import { useAutoProfileCookies } from "../../hooks/use_auto_profile_cookies";
 import { useYtdlpVersion } from "../../hooks/use_ytdlp_version";
+import { isMobile } from "../../lib/tauri_env";
 import CookieFileField from "./cookies/CookieFileField";
 import YtdlpVersionBadge from "./cookies/YtdlpVersionBadge";
 
@@ -164,6 +165,7 @@ export default function CookiesSettings() {
             onClear={clearCookiesFile}
             onRefresh={handleRefreshCookies}
             refreshing={refreshing}
+            showRefresh={!isMobile()}
           />
           <button
             type="button"

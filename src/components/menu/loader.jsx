@@ -5,9 +5,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { isActive, isFinished, statusTranslationKey } from "../../lib/download_status";
 import { parsePercentage } from "../../lib/parse_percentage";
+import { isMobile } from "../../lib/tauri_env";
 
 const supportsPauseResume =
-  typeof navigator !== "undefined" && !/Win/i.test(navigator.userAgent);
+  typeof navigator !== "undefined" &&
+  !/Win/i.test(navigator.userAgent) &&
+  !isMobile();
 
 export default function Loader({ id, download }) {
   const { t } = useTranslation();
